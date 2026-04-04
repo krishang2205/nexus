@@ -26,6 +26,19 @@ const supabaseAdmin = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
   })
   : null;
 
+const keyLooksPublishable = typeof SUPABASE_SERVICE_ROLE_KEY === 'string'
+  && SUPABASE_SERVICE_ROLE_KEY.startsWith('sb_publishable_');
+
+if (!supabaseAdmin) {
+  console.warn('Supabase admin client not initialized. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in backend environment.');
+}
+
+if (
+  keyLooksPublishable
+) {
+  console.error('Invalid SUPABASE_SERVICE_ROLE_KEY: publishable key detected. Use the Supabase service_role secret key for backend writes.');
+}
+
 module.exports = {
   upload,
   openai,

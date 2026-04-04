@@ -37,6 +37,7 @@ import QuizIcon from '@mui/icons-material/Quiz';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import { io } from 'socket.io-client';
 import TranscriptionService from '../services/TranscriptionService';
+import { supabase } from '../config/supabase';
 import {
   buildMeetingIntelligence,
   classifyTranscriptLine,
@@ -80,6 +81,45 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
 
   // Initialize socket connection for transcription sharing
   useEffect(() => {
+    const handleIncomingTranscription = (data) => {
+      console.log('Received transcription data:', data);
+
+      // Upsert remote chunks to support live interim caption updates.
+      setTranscripts(prev => {
+        const existingIndex = prev.findIndex(item =>
+          item.id === data.id && item.speakerId === data.speakerId
+        );
+
+        if (existingIndex !== -1) {
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            ...data,
+            isRemote: true,
+            endTime: data.isFinal ? (data.endTime || new Date().toISOString()) : null,
+          };
+          return updated;
+        }
+
+        return [...prev, {
+          ...data,
+          isRemote: true,
+          endTime: data.isFinal ? (data.endTime || new Date().toISOString()) : null,
+        }];
+      });
+    };
+
+    const attachSocketListener = (targetSocket) => {
+      if (!targetSocket) return;
+      targetSocket.off('transcription-data', handleIncomingTranscription);
+      targetSocket.on('transcription-data', handleIncomingTranscription);
+    };
+
+    const detachSocketListener = (targetSocket) => {
+      if (!targetSocket) return;
+      targetSocket.off('transcription-data', handleIncomingTranscription);
+    };
+
     // Get socket from parent component or create new one
     const getSocket = () => {
       // Try to get socket from window (passed from Meet component)
@@ -112,39 +152,29 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
     };
 
     socketRef.current = getSocket();
+    attachSocketListener(socketRef.current);
 
-    // Listen for transcription data from other users
-    socketRef.current.on('transcription-data', (data) => {
-      console.log('Received transcription data:', data);
-      
-      // Upsert remote chunks to support live interim caption updates.
-      setTranscripts(prev => {
-        const existingIndex = prev.findIndex(item =>
-          item.id === data.id && item.speakerId === data.speakerId
-        );
+    // If the meeting socket appears after mount, switch to it so all clients share one channel.
+    const socketMigrationInterval = setInterval(() => {
+      if (!window.meetingSocket || window.meetingSocket === socketRef.current) return;
 
-        if (existingIndex !== -1) {
-          const updated = [...prev];
-          updated[existingIndex] = {
-            ...updated[existingIndex],
-            ...data,
-            isRemote: true,
-            endTime: data.isFinal ? (data.endTime || new Date().toISOString()) : null,
-          };
-          return updated;
-        }
+      const previousSocket = socketRef.current;
+      detachSocketListener(previousSocket);
 
-        return [...prev, {
-          ...data,
-          isRemote: true,
-          endTime: data.isFinal ? (data.endTime || new Date().toISOString()) : null,
-        }];
-      });
-    });
+      socketRef.current = window.meetingSocket;
+      ownsSocketRef.current = false;
+      attachSocketListener(socketRef.current);
+
+      if (previousSocket) {
+        previousSocket.off('connect');
+        previousSocket.off('transcription-data');
+      }
+    }, 1000);
 
     return () => {
+      clearInterval(socketMigrationInterval);
       if (socketRef.current) {
-        socketRef.current.off('transcription-data');
+        detachSocketListener(socketRef.current);
         if (ownsSocketRef.current) {
           socketRef.current.disconnect();
         }
@@ -154,7 +184,11 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
 
   // Share transcription data with other users
   const shareTranscriptionData = (transcriptData) => {
-    if (socketRef.current && socketRef.current.connected && meetingId) {
+    const emitSocket = window.meetingSocket && window.meetingSocket.connected
+      ? window.meetingSocket
+      : socketRef.current;
+
+    if (emitSocket && emitSocket.connected && meetingId) {
       console.log('📤 Sharing transcription data:', {
         speakerId: transcriptData.speakerId,
         speakerName: transcriptData.speakerName,
@@ -162,7 +196,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
         isFinal: transcriptData.isFinal
       });
       
-      socketRef.current.emit('transcription-data', {
+      emitSocket.emit('transcription-data', {
         ...transcriptData,
         meetingId,
         timestamp: new Date().toISOString()
@@ -197,6 +231,52 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
     }
 
     return `${base}${normalizedPath}`;
+  };
+
+  const persistTranscriptDirectlyToSupabase = async (item) => {
+    try {
+      const row = {
+        transcript_id: item.id,
+        meeting_id: meetingId,
+        user_id: item.speakerId || localUserId || null,
+        speaker_name: item.speakerName || localUserName || 'Unknown',
+        transcript_text: item.text,
+        source: item.source || 'browser-stt',
+        is_final: Boolean(item.isFinal),
+        created_at: item.startTime || new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      const { data: updatedRows, error: updateError } = await supabase
+        .from('meeting_transcripts')
+        .update({
+          meeting_id: row.meeting_id,
+          user_id: row.user_id,
+          speaker_name: row.speaker_name,
+          transcript_text: row.transcript_text,
+          source: row.source,
+          is_final: row.is_final,
+          updated_at: row.updated_at,
+        })
+        .eq('transcript_id', row.transcript_id)
+        .select('transcript_id');
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      if (!updatedRows || updatedRows.length === 0) {
+        const { error: insertError } = await supabase
+          .from('meeting_transcripts')
+          .insert(row);
+
+        if (insertError) {
+          throw insertError;
+        }
+      }
+    } catch (error) {
+      console.error('Direct Supabase transcript upsert failed:', error);
+    }
   };
   const quickPrompts = useMemo(() => getQuickPrompts(), []);
   const intelligence = useMemo(() => buildMeetingIntelligence(transcripts), [transcripts]);
@@ -501,12 +581,22 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
       }
     };
 
+    const getPollIntervalMs = () => (document.visibilityState === 'visible' ? 450 : 1200);
+
     pollLiveTranscripts();
-    const intervalId = setInterval(pollLiveTranscripts, 1200);
+    let intervalId = setInterval(pollLiveTranscripts, getPollIntervalMs());
+
+    const handleVisibilityChange = () => {
+      clearInterval(intervalId);
+      intervalId = setInterval(pollLiveTranscripts, getPollIntervalMs());
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       isDisposed = true;
       clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [meetingId, API_BASE_URL, effectiveLocalUserId]);
 
@@ -526,7 +616,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
       }
 
       try {
-        await fetch(buildApiUrl('/api/transcripts'), {
+        const response = await fetch(buildApiUrl('/api/transcripts'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -540,8 +630,24 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
             isFinal: Boolean(item.isFinal),
           })
         });
+
+        let persistedViaBackend = false;
+        if (response.ok) {
+          try {
+            const payload = await response.json();
+            persistedViaBackend = payload?.storage?.source === 'supabase';
+          } catch {
+            persistedViaBackend = false;
+          }
+        }
+
+        // If backend did not confirm Supabase persistence, write directly from frontend.
+        if (!persistedViaBackend) {
+          await persistTranscriptDirectlyToSupabase(item);
+        }
       } catch (error) {
         console.error('Failed to persist transcript line:', error);
+        await persistTranscriptDirectlyToSupabase(item);
       }
     });
   }, [transcripts, meetingId, localUserId, localUserName, API_BASE_URL]);

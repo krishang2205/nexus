@@ -39,10 +39,18 @@ async function saveTranscriptEntry(req, res) {
     });
 
     if (!storage.saved) {
-      return res.status(500).json({ success: false, error: storage.reason || 'failed-to-save-transcript' });
+      return res.status(500).json({
+        success: false,
+        error: storage.reason || 'failed-to-save-transcript',
+        storage,
+      });
     }
 
-    return res.json({ success: true });
+    if (storage.source !== 'supabase') {
+      console.warn(`Transcript saved without Supabase persistence (source=${storage.source}) for meeting ${meetingId}`);
+    }
+
+    return res.json({ success: true, storage });
   } catch (error) {
     console.error('Transcript save error:', error);
     return res.status(500).json({ error: 'Failed to save transcript', details: error.message });

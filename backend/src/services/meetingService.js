@@ -70,16 +70,36 @@ async function saveTranscript({
   };
 
   if (supabaseAdmin) {
-    const { error } = await supabaseAdmin
+    const { data: updatedRows, error: updateError } = await supabaseAdmin
       .from('meeting_transcripts')
-      .upsert(entry, {
-        onConflict: 'transcript_id',
-      });
+      .update({
+        meeting_id: entry.meeting_id,
+        user_id: entry.user_id,
+        speaker_name: entry.speaker_name,
+        transcript_text: entry.transcript_text,
+        source: entry.source,
+        is_final: entry.is_final,
+        updated_at: entry.updated_at,
+      })
+      .eq('transcript_id', entry.transcript_id)
+      .select('transcript_id');
 
-    if (error) {
-      console.error('Supabase transcript upsert failed, falling back to memory:', error.message);
+    if (updateError) {
+      console.error('Supabase transcript update failed, falling back to memory:', updateError.message);
       upsertInMemoryTranscript(entry);
-      return { saved: true, source: 'memory-fallback' };
+      return { saved: true, source: 'memory-fallback', error: updateError.message };
+    }
+
+    if (!updatedRows || updatedRows.length === 0) {
+      const { error: insertError } = await supabaseAdmin
+        .from('meeting_transcripts')
+        .insert(entry);
+
+      if (insertError) {
+        console.error('Supabase transcript insert failed, falling back to memory:', insertError.message);
+        upsertInMemoryTranscript(entry);
+        return { saved: true, source: 'memory-fallback', error: insertError.message };
+      }
     }
 
     upsertInMemoryTranscript(entry);
