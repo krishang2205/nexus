@@ -556,7 +556,7 @@ function registerSocketHandlers(io) {
 
     socket.on('transcription-data', payload => {
       try {
-        const { meetingId, speakerId, speakerName, text, isFinal, timestamp } = payload || {};
+        const { meetingId, id, speakerId, speakerName, text, isFinal, timestamp, source } = payload || {};
         socket.lastActivity = Date.now();
 
         if (!meetingId || !speakerId || !text) {
@@ -574,14 +574,14 @@ function registerSocketHandlers(io) {
         if (!cleanText) return;
 
         const transcriptionData = {
-          id: `${speakerId}-${timestamp || Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
+          id: id || `${speakerId}-${timestamp || Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
           speakerId,
           speakerName: speakerName || 'Unknown User',
           text: cleanText,
           isFinal: Boolean(isFinal),
           startTime: timestamp || new Date().toISOString(),
-          endTime: new Date().toISOString(),
-          source: 'remote',
+          endTime: isFinal ? new Date().toISOString() : null,
+          source: source || 'remote',
           originalSenderId: socket.id
         };
 

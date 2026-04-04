@@ -99,14 +99,9 @@ class TranscriptionService {
     };
     
     this.recognition.onresult = (event) => {
-      // Determine the current speaker - either detected active speaker or fallback to local user
-      const speakerId = this.activeSpeaker || this.currentSpeakerId;
-      let speakerName = this.currentSpeakerName;
-      
-      // If we have a different active speaker, use their name
-      if (this.activeSpeaker && this.remoteAudioSources[this.activeSpeaker]) {
-        speakerName = this.remoteAudioSources[this.activeSpeaker].name;
-      }
+      // Browser recognition runs on local microphone input, so keep speaker identity local.
+      const speakerId = this.currentSpeakerId;
+      const speakerName = this.currentSpeakerName;
       
       // Only process if we have a valid speaker
       if (speakerId && speakerName) {
@@ -314,22 +309,6 @@ class TranscriptionService {
     // Store the stream reference for later use if provided
     if (stream) {
       this.mediaStream = stream;
-      
-      // Add local user as a remote audio source for consistent handling
-      this.addRemoteAudioSource(speakerId, speakerName, stream);
-    }
-    
-    // Add all remote peers' audio
-    if (remotePeers && remotePeers.length > 0) {
-      console.log(`Adding ${remotePeers.length} remote peers for transcription`);
-      
-      remotePeers.forEach(peer => {
-        if (peer && peer.id && peer.stream) {
-          this.addRemoteAudioSource(peer.id, peer.username || 'Remote User', peer.stream);
-        }
-      });
-    } else {
-      console.log('No remote peers provided for transcription');
     }
     
     // Start recognition

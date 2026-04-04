@@ -76,6 +76,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
   
   // Socket reference for sharing transcription data
   const socketRef = useRef(null);
+  const ownsSocketRef = useRef(false);
 
   // Initialize socket connection for transcription sharing
   useEffect(() => {
@@ -83,17 +84,31 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
     const getSocket = () => {
       // Try to get socket from window (passed from Meet component)
       if (window.meetingSocket) {
+        ownsSocketRef.current = false;
         return window.meetingSocket;
       }
       
       // Create new socket connection if needed
       const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_API_URL || 'http://localhost:5000';
-      return io(API_BASE_URL, {
+      ownsSocketRef.current = true;
+      const fallbackSocket = io(API_BASE_URL, {
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: 5,
         reconnectionDelay: 1000,
       });
+
+      // Ensure fallback socket is in the room so transcription broadcasts work.
+      fallbackSocket.on('connect', () => {
+        if (meetingId) {
+          fallbackSocket.emit('join-room', {
+            meetingId,
+            username: localUserName || 'Guest'
+          });
+        }
+      });
+
+      return fallbackSocket;
     };
 
     socketRef.current = getSocket();
@@ -102,19 +117,27 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
     socketRef.current.on('transcription-data', (data) => {
       console.log('Received transcription data:', data);
       
-      // Add remote user's transcription to our transcript list
+      // Upsert remote chunks to support live interim caption updates.
       setTranscripts(prev => {
-        // Check for duplicates
-        const exists = prev.some(item => 
-          item.id === data.id && 
-          item.speakerId === data.speakerId
+        const existingIndex = prev.findIndex(item =>
+          item.id === data.id && item.speakerId === data.speakerId
         );
-        
-        if (exists) return prev;
-        
+
+        if (existingIndex !== -1) {
+          const updated = [...prev];
+          updated[existingIndex] = {
+            ...updated[existingIndex],
+            ...data,
+            isRemote: true,
+            endTime: data.isFinal ? (data.endTime || new Date().toISOString()) : null,
+          };
+          return updated;
+        }
+
         return [...prev, {
           ...data,
-          isRemote: true // Mark as remote transcription
+          isRemote: true,
+          endTime: data.isFinal ? (data.endTime || new Date().toISOString()) : null,
         }];
       });
     });
@@ -122,9 +145,12 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
     return () => {
       if (socketRef.current) {
         socketRef.current.off('transcription-data');
+        if (ownsSocketRef.current) {
+          socketRef.current.disconnect();
+        }
       }
     };
-  }, [meetingId]);
+  }, [meetingId, localUserName]);
 
   // Share transcription data with other users
   const shareTranscriptionData = (transcriptData) => {
@@ -149,6 +175,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
     }
   };
   const transcriptionServiceRef = useRef(new TranscriptionService());
+  const lastSharedTranscriptsRef = useRef(new Map());
   const transcriptsEndRef = useRef(null);
   const savedTranscriptIdsRef = useRef(new Set());
   const insightsDebounceRef = useRef(null);
@@ -256,8 +283,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
 
     const audioContext = new AudioContextImpl();
     const destination = audioContext.createMediaStreamDestination();
-    const sourceStreams = [localStream, ...getRemotePeersData().map(peer => peer.stream)]
-      .filter(Boolean);
+    const sourceStreams = [localStream];
 
     let connectedSources = 0;
 
@@ -310,22 +336,21 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
       return false;
     }
 
-    const remotePeersData = getRemotePeersData();
-    console.log(`Found ${remotePeersData.length} remote peers with audio streams`);
-
     const success = transcriptionServiceRef.current.startTranscription(
       effectiveLocalUserId,
       effectiveLocalUserName,
       (updatedTranscripts) => {
         setTranscripts([...updatedTranscripts]);
-        
-        // Share new transcription data with other users
-        const newTranscripts = updatedTranscripts.filter(item => 
-          !transcripts.some(existing => existing.id === item.id)
-        );
-        
-        newTranscripts.forEach(transcript => {
-          if (transcript.isFinal) {
+
+        // Stream interim and final updates whenever transcript content changes.
+        updatedTranscripts.forEach(transcript => {
+          if (!transcript?.id || !transcript?.text?.trim()) return;
+
+          const signature = `${transcript.text.trim()}::${transcript.isFinal ? 'final' : 'interim'}`;
+          const previousSignature = lastSharedTranscriptsRef.current.get(transcript.id);
+
+          if (previousSignature !== signature) {
+            lastSharedTranscriptsRef.current.set(transcript.id, signature);
             shareTranscriptionData(transcript);
           }
         });
@@ -333,8 +358,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
       (errorMessage) => {
         onError?.(errorMessage);
       },
-      localStream,
-      remotePeersData
+      localStream
     );
 
     if (success) {
@@ -398,54 +422,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
     };
   }, [localStream, isTranscribing]);
   
-  // Monitor changes in remote peers for transcription
-  useEffect(() => {
-    if (!isTranscribing || !peerRefs) return;
-    
-    // Update remote peers when they change while transcription is active
-    const updateRemotePeers = () => {
-      if (!peerRefs.current) return;
-      
-      const remotePeersData = peerRefs.current
-        .map(peer => {
-          // First check if peer has stream property directly
-          let peerStream = peer.stream;
-          
-          // If not, try to get it from the RTCPeerConnection using our helper
-          if (!peerStream && peer.peer) {
-            peerStream = transcriptionServiceRef.current.getRemoteStreamFromPeer(peer.peer);
-          }
-          
-          return {
-            id: peer.id,
-            username: peer.username || 'Remote User',
-            stream: peerStream
-          };
-        })
-        .filter(peer => peer.stream); // Only include peers with valid streams
-      
-      console.log(`Updating transcription with ${remotePeersData.length} remote peers`);
-      
-      // Update each remote peer in the service
-      remotePeersData.forEach(peer => {
-        transcriptionServiceRef.current.addRemoteAudioSource(
-          peer.id, 
-          peer.username, 
-          peer.stream
-        );
-      });
-    };
-    
-    // Set up a periodic check for peer changes
-    const intervalId = setInterval(updateRemotePeers, 5000);
-    
-    // Initial update
-    updateRemotePeers();
-    
-    return () => {
-      clearInterval(intervalId);
-    };
-  }, [isTranscribing, peerRefs]);
+  // Browser speech recognition should only use local microphone for speaker attribution.
   
   // Auto scroll to the bottom when transcripts update
   useEffect(() => {

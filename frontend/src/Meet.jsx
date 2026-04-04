@@ -87,19 +87,7 @@ export default function Meet() {
 	const peersRef = useRef([]);
 	const socketRef = useRef(null);
 	const streamRef = useRef(null);
-	
-	// Make socket available globally for transcription sharing
-	useEffect(() => {
-		if (socketRef.current) {
-			window.meetingSocket = socketRef.current;
-		}
 
-		return () => {
-			if (window.meetingSocket === socketRef.current) {
-				window.meetingSocket = null;
-			}
-		};
-	}, [isInitialized]);
 	useEffect(() => {
 		if (lastMessageNotification) {
 			const timer = setTimeout(() => {
@@ -254,6 +242,9 @@ export default function Meet() {
 				meetingId
 			}
 		});
+
+		// Share the active meeting socket with transcription components.
+		window.meetingSocket = socketRef.current;
 		
 		// Enhanced socket connection and error handling
 		socketRef.current.on('connect', () => {
@@ -1162,6 +1153,9 @@ export default function Meet() {
 					console.log('Socket disconnected');
 					
 					// Clear the reference
+					if (window.meetingSocket === socketRef.current) {
+						window.meetingSocket = null;
+					}
 					socketRef.current = null;
 				} catch (err) {
 					console.error('Error disconnecting socket:', err);
