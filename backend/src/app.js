@@ -11,8 +11,28 @@ app.use((req, res, next) => {
 
 app.use((req, res, next) => {
 	const origin = req.headers.origin;
+	const isAllowedOrigin = (value) => {
+		if (!value) return true;
 
-	if (NODE_ENV === 'development' || (origin && ALLOWED_ORIGINS.includes(origin))) {
+		if (NODE_ENV === 'development') return true;
+
+		return ALLOWED_ORIGINS.some(allowed => {
+			if (allowed === '*') return true;
+			if (allowed === value) return true;
+
+			// Support wildcard origins such as https://*.vercel.app
+			if (allowed.includes('*')) {
+				const pattern = new RegExp('^' + allowed
+					.replace(/[.+?^${}()|[\]\\]/g, '\\$&')
+					.replace(/\*/g, '.*') + '$');
+				return pattern.test(value);
+			}
+
+			return false;
+		});
+	};
+
+	if (isAllowedOrigin(origin)) {
 		res.header('Access-Control-Allow-Origin', origin || '*');
 		res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
 		res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
