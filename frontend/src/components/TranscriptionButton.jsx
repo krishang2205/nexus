@@ -86,9 +86,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
 
       // Upsert remote chunks to support live interim caption updates.
       setTranscripts(prev => {
-        const existingIndex = prev.findIndex(item =>
-          item.id === data.id && item.speakerId === data.speakerId
-        );
+        const existingIndex = prev.findIndex(item => item.id === data.id);
 
         if (existingIndex !== -1) {
           const updated = [...prev];
@@ -423,7 +421,28 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
       effectiveLocalUserId,
       effectiveLocalUserName,
       (updatedTranscripts) => {
-        setTranscripts([...updatedTranscripts]);
+        // Merge local speech updates into existing state so remote rows are preserved.
+        setTranscripts(prev => {
+          const mergedById = new Map();
+
+          prev.forEach(item => {
+            if (item?.id) {
+              mergedById.set(item.id, item);
+            }
+          });
+
+          updatedTranscripts.forEach(item => {
+            if (!item?.id) return;
+            const existing = mergedById.get(item.id);
+            mergedById.set(item.id, {
+              ...existing,
+              ...item,
+              isRemote: false,
+            });
+          });
+
+          return Array.from(mergedById.values());
+        });
 
         // Stream interim and final updates whenever transcript content changes.
         updatedTranscripts.forEach(transcript => {
@@ -528,9 +547,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
         rows.forEach(row => {
           if (!row?.id || !row?.text) return;
 
-          const existingIndex = next.findIndex(item =>
-            item.id === row.id && item.speakerId === row.speakerId
-          );
+          const existingIndex = next.findIndex(item => item.id === row.id);
 
           const mapped = {
             id: row.id,

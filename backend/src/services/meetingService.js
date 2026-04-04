@@ -19,6 +19,30 @@ function normalizeTranscriptRow(row) {
   };
 }
 
+function dedupeTranscriptRows(rows = []) {
+  const byTranscriptId = new Map();
+
+  rows.forEach(row => {
+    if (!row?.transcript_id) return;
+    const existing = byTranscriptId.get(row.transcript_id);
+    if (!existing) {
+      byTranscriptId.set(row.transcript_id, row);
+      return;
+    }
+
+    const existingUpdated = new Date(existing.updated_at || existing.created_at || 0).getTime();
+    const incomingUpdated = new Date(row.updated_at || row.created_at || 0).getTime();
+
+    if (incomingUpdated >= existingUpdated) {
+      byTranscriptId.set(row.transcript_id, row);
+    }
+  });
+
+  return Array.from(byTranscriptId.values()).sort(
+    (a, b) => new Date(a.updated_at || a.created_at) - new Date(b.updated_at || b.created_at)
+  );
+}
+
 function upsertInMemoryTranscript(entry) {
   if (!meetingTranscripts.has(entry.meeting_id)) {
     meetingTranscripts.set(entry.meeting_id, []);
@@ -132,7 +156,7 @@ async function getMeetingTranscripts(meetingId, options = {}) {
 
     const { data, error } = await query;
     if (!error) {
-      const transcripts = (data || []).map(normalizeTranscriptRow);
+      const transcripts = dedupeTranscriptRows(data || []).map(normalizeTranscriptRow);
       const latestCursor = transcripts.length > 0
         ? transcripts[transcripts.length - 1].updatedAt
         : since;
@@ -148,10 +172,10 @@ async function getMeetingTranscripts(meetingId, options = {}) {
     console.error('Supabase transcript fetch failed, falling back to memory:', error.message);
   }
 
-  const rows = (meetingTranscripts.get(meetingId) || [])
+  const rows = dedupeTranscriptRows((meetingTranscripts.get(meetingId) || [])
     .filter(row => !since || row.updated_at >= since)
     .sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at))
-    .slice(-limit);
+    .slice(-limit));
 
   const transcripts = rows.map(normalizeTranscriptRow);
   const latestCursor = transcripts.length > 0
