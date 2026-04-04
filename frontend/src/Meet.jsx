@@ -79,17 +79,27 @@ export default function Meet() {
 	const [isTyping, setIsTyping] = useState(false);
 	const [unreadMessages, setUnreadMessages] = useState(0);
 	const [lastMessageNotification, setLastMessageNotification] = useState(null);
+	// Keep track of initialization to avoid double initialization
+	const [isInitialized, setIsInitialized] = useState(false);
+
+	// Refs for media and connections
+	const localVideoRef = useRef(null);
+	const peersRef = useRef([]);
+	const socketRef = useRef(null);
+	const streamRef = useRef(null);
 	
 	// Make socket available globally for transcription sharing
 	useEffect(() => {
 		if (socketRef.current) {
 			window.meetingSocket = socketRef.current;
-			
-			return () => {
-				window.meetingSocket = null;
-			};
 		}
-	}, [socketRef.current]);
+
+		return () => {
+			if (window.meetingSocket === socketRef.current) {
+				window.meetingSocket = null;
+			}
+		};
+	}, [isInitialized]);
 	useEffect(() => {
 		if (lastMessageNotification) {
 			const timer = setTimeout(() => {
@@ -115,15 +125,6 @@ export default function Meet() {
 	const [connectionState, setConnectionState] = useState('connecting');
 	const [showReconnectButton, setShowReconnectButton] = useState(false);
 	const [peers, setPeers] = useState([]);
-	
-	// Keep track of initialization to avoid double initialization
-	const [isInitialized, setIsInitialized] = useState(false);
-	
-	// Refs for media and connections
-	const localVideoRef = useRef(null);
-	const peersRef = useRef([]);
-	const socketRef = useRef(null);
-	const streamRef = useRef(null);
 	
 	// Additional refs to track cleanup status and errors
 	const isCleanedUp = useRef(false);

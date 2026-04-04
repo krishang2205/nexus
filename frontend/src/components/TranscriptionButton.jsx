@@ -583,10 +583,16 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
 
       const response = await fetch(buildApiUrl('/api/transcribe-whisper'), {
         method: 'POST',
-        body: formData
+        body: formData,
+        // Add timeout to prevent hanging
+        signal: AbortSignal.timeout(10000) // 10 second timeout
       });
 
-      if (!response.ok) return;
+      if (!response.ok) {
+        // Only log error, don't throw to prevent breaking transcription
+        console.warn('Whisper API not available:', response.status);
+        return;
+      }
 
       const payload = await response.json();
       const text = (payload.text || '').trim();
@@ -610,10 +616,13 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
         return [...prev, whisperTranscript];
       });
     } catch (error) {
-      console.error('Whisper chunk upload failed:', error);
-      if (!whisperNetworkWarnedRef.current) {
+      // Improved error handling - don't spam console
+      if (error.name === 'AbortError') {
+        console.log('Whisper request timed out');
+      } else if (!whisperNetworkWarnedRef.current) {
+        console.error('Whisper chunk upload failed:', error);
         whisperNetworkWarnedRef.current = true;
-        onError?.('Whisper upload is unavailable right now. Browser transcription will continue.', 'warning');
+        onError?.('Whisper transcription service is unavailable. Browser transcription will continue.', 'warning');
       }
     }
   };

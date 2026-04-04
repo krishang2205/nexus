@@ -212,9 +212,24 @@ class TranscriptionService {
         this.onErrorCallback(`Transcription error: ${event.error}`);
       }
       
-      // Try to restart if it was a temporary error
-      if (event.error === 'network' || event.error === 'service-not-allowed' || event.error === 'aborted') {
+      // Improved restart logic - be more selective about when to restart
+      const restartableErrors = ['network', 'service-not-allowed'];
+      const shouldRestart = restartableErrors.includes(event.error) && 
+                          event.error !== 'aborted' && 
+                          this.isTranscribing &&
+                          !this.restartTimer;
+      
+      if (shouldRestart) {
         this.restartRecognition();
+      } else if (event.error === 'aborted') {
+        // For aborted errors, wait longer before restarting
+        console.warn('Transcription was aborted, waiting before restart...');
+        this.isTranscribing = false;
+        setTimeout(() => {
+          if (this.isTranscribing) {
+            this.restartRecognition();
+          }
+        }, 3000);
       }
     };
     
@@ -393,6 +408,19 @@ class TranscriptionService {
         return;
       }
 
+      // Add restart counter to prevent infinite loops
+      this.restartCount = (this.restartCount || 0) + 1;
+      
+      // If we've restarted too many times, stop trying
+      if (this.restartCount > 5) {
+        console.error('Transcription failed to start after multiple attempts. Please refresh the page.');
+        if (this.onErrorCallback) {
+          this.onErrorCallback('Transcription service is having issues. Please try refreshing the page or using a different browser.');
+        }
+        this.stopTranscription();
+        return;
+      }
+
       try {
         // First, check if audio is still available
         if (this.mediaStream) {
@@ -408,13 +436,16 @@ class TranscriptionService {
           }
         }
 
+        // Increase delay for each restart attempt
+        const delay = Math.min(1000 * this.restartCount, 5000);
+        
         this.restartTimer = setTimeout(() => {
           this.restartTimer = null;
           if (!this.isTranscribing || this.isRecognitionRunning || this.isRecognitionStarting) {
             return;
           }
 
-          console.log('Restarting transcription...');
+          console.log(`Restarting transcription... (attempt ${this.restartCount})`);
           try {
             this.isRecognitionStarting = true;
             this.recognition.start();
@@ -427,19 +458,40 @@ class TranscriptionService {
               console.error('Error restarting transcription:', err);
             }
           }
-        }, 1000);
+        }, delay);
       } catch (err) {
         console.error('Error restarting transcription:', err);
         
         // If we can't restart after multiple attempts, stop trying
-        if (err.name === 'NotAllowedError') {
-          this.isTranscribing = false;
-          if (this.onErrorCallback) {
-            this.onErrorCallback('Could not restart transcription. Please try again manually.');
-          }
+        if (this.restartCount >= 3) {
+          this.stopTranscription();
         }
       }
     }
+  }
+
+  /**
+   * Stop transcription and clean up resources
+   */
+  stopTranscription() {
+    this.isTranscribing = false;
+    this.restartCount = 0; // Reset restart counter
+    
+    if (this.restartTimer) {
+      clearTimeout(this.restartTimer);
+      this.restartTimer = null;
+    }
+    
+    if (this.recognition && this.isRecognitionRunning) {
+      try {
+        this.recognition.stop();
+      } catch (err) {
+        console.warn('Error stopping recognition:', err);
+      }
+    }
+    
+    this.isRecognitionRunning = false;
+    this.isRecognitionStarting = false;
   }
   
   /**
