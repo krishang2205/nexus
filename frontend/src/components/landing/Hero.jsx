@@ -81,7 +81,11 @@ const Hero = ({ onStartTrial }) => {
               letterSpacing: '-0.02em',
               mb: 3,
               color: 'var(--text-primary)',
-              fontFamily: 'var(--font-heading)',
+              fontFamily: '"Playfair Display", serif', // Elegant serif font
+              // Alternative options: 
+              // fontFamily: '"Space Grotesk", sans-serif', // Modern geometric
+              // fontFamily: '"Inter", sans-serif', // Clean sans-serif
+              // fontFamily: '"Bebas Neue", cursive', // Bold display
             }}
           >
             Run smarter meetings.

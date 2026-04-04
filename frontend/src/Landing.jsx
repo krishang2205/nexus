@@ -23,6 +23,7 @@ import FeaturesSection from './components/landing/FeaturesSection';
 import ProductPreview from './components/landing/ProductPreview';
 import CTASection from './components/landing/CTASection';
 import ThemeToggle from './components/ThemeToggle';
+import { useAuth as useSupabaseAuth } from './contexts/AuthContext';
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -115,8 +116,13 @@ export default function Landing() {
                       }}
                     >
                       <Stack direction="row" spacing={1.5} alignItems="center">
-                        <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>{user?.firstName || 'Account'}</Typography>
-                        {user?.imageUrl ? <Avatar src={user.imageUrl} sx={{ width: 36, height: 36 }} /> : <AccountCircleIcon sx={{ fontSize: 36 }} />}
+                        <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>
+                          {user?.firstName || user?.username || 'Account'}
+                        </Typography>
+                        {user?.imageUrl ? 
+                          <Avatar src={user.imageUrl} sx={{ width: 36, height: 36 }} /> : 
+                          <AccountCircleIcon sx={{ fontSize: 36 }} />
+                        }
                       </Stack>
                     </Button>
                   </SignedIn>

@@ -554,6 +554,58 @@ function registerSocketHandlers(io) {
       }
     });
 
+    socket.on('transcription-data', payload => {
+      try {
+        const { meetingId, speakerId, speakerName, text, isFinal, timestamp } = payload || {};
+        socket.lastActivity = Date.now();
+
+        if (!meetingId || !speakerId || !text) {
+          socket.emit('error', { message: 'Invalid transcription data format' });
+          return;
+        }
+
+        if (socket.meetingId !== meetingId) {
+          socket.emit('error', { message: 'Transcription data must be sent to your current room' });
+          return;
+        }
+
+        // Validate and clean the transcription data
+        const cleanText = typeof text === 'string' ? text.trim() : '';
+        if (!cleanText) return;
+
+        const transcriptionData = {
+          id: `${speakerId}-${timestamp || Date.now()}-${Math.random().toString(36).substring(2, 10)}`,
+          speakerId,
+          speakerName: speakerName || 'Unknown User',
+          text: cleanText,
+          isFinal: Boolean(isFinal),
+          startTime: timestamp || new Date().toISOString(),
+          endTime: new Date().toISOString(),
+          source: 'remote',
+          originalSenderId: socket.id
+        };
+
+        console.log(`Broadcasting transcription from ${speakerName} in room ${meetingId}: "${cleanText.substring(0, 50)}..."`);
+
+        // Broadcast to all other users in the room (except sender)
+        socket.to(meetingId).emit('transcription-data', transcriptionData);
+
+        // Send confirmation to sender
+        socket.emit('transcription-data-confirm', {
+          ...transcriptionData,
+          broadcastTo: activeRooms.has(meetingId) ? activeRooms.get(meetingId).size - 1 : 0,
+          timestamp: Date.now()
+        });
+
+      } catch (error) {
+        console.error('Error handling transcription data:', error);
+        socket.emit('error', {
+          message: 'Failed to process transcription data',
+          details: NODE_ENV === 'development' ? error.message : undefined,
+        });
+      }
+    });
+
     socket.on('heartbeat', () => {
       socket.lastActivity = Date.now();
       if (userActivity.has(socket.id)) {

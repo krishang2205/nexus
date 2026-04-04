@@ -80,7 +80,16 @@ export default function Meet() {
 	const [unreadMessages, setUnreadMessages] = useState(0);
 	const [lastMessageNotification, setLastMessageNotification] = useState(null);
 	
-	// Auto-dismiss chat notification after 5 seconds
+	// Make socket available globally for transcription sharing
+	useEffect(() => {
+		if (socketRef.current) {
+			window.meetingSocket = socketRef.current;
+			
+			return () => {
+				window.meetingSocket = null;
+			};
+		}
+	}, [socketRef.current]);
 	useEffect(() => {
 		if (lastMessageNotification) {
 			const timer = setTimeout(() => {

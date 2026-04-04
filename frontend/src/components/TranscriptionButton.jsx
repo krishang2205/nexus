@@ -35,6 +35,7 @@ import AutoGraphIcon from '@mui/icons-material/AutoGraph';
 import AssignmentTurnedInIcon from '@mui/icons-material/AssignmentTurnedIn';
 import QuizIcon from '@mui/icons-material/Quiz';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import { io } from 'socket.io-client';
 import TranscriptionService from '../services/TranscriptionService';
 import {
   buildMeetingIntelligence,
@@ -73,7 +74,80 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
   const [isWhisperActive, setIsWhisperActive] = useState(false);
   const [resumeAfterMicOn, setResumeAfterMicOn] = useState(false);
   
-  // Use a ref for the transcription service
+  // Socket reference for sharing transcription data
+  const socketRef = useRef(null);
+
+  // Initialize socket connection for transcription sharing
+  useEffect(() => {
+    // Get socket from parent component or create new one
+    const getSocket = () => {
+      // Try to get socket from window (passed from Meet component)
+      if (window.meetingSocket) {
+        return window.meetingSocket;
+      }
+      
+      // Create new socket connection if needed
+      const API_BASE_URL = import.meta.env.VITE_API_URL || import.meta.env.VITE_LOCAL_API_URL || 'http://localhost:5000';
+      return io(API_BASE_URL, {
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
+    };
+
+    socketRef.current = getSocket();
+
+    // Listen for transcription data from other users
+    socketRef.current.on('transcription-data', (data) => {
+      console.log('Received transcription data:', data);
+      
+      // Add remote user's transcription to our transcript list
+      setTranscripts(prev => {
+        // Check for duplicates
+        const exists = prev.some(item => 
+          item.id === data.id && 
+          item.speakerId === data.speakerId
+        );
+        
+        if (exists) return prev;
+        
+        return [...prev, {
+          ...data,
+          isRemote: true // Mark as remote transcription
+        }];
+      });
+    });
+
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.off('transcription-data');
+      }
+    };
+  }, [meetingId]);
+
+  // Share transcription data with other users
+  const shareTranscriptionData = (transcriptData) => {
+    if (socketRef.current && socketRef.current.connected && meetingId) {
+      console.log('📤 Sharing transcription data:', {
+        speakerId: transcriptData.speakerId,
+        speakerName: transcriptData.speakerName,
+        text: transcriptData.text?.substring(0, 50) + '...',
+        isFinal: transcriptData.isFinal
+      });
+      
+      socketRef.current.emit('transcription-data', {
+        ...transcriptData,
+        meetingId,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      console.log('❌ Cannot share transcription - socket not connected or no meetingId', {
+        socketConnected: socketRef.current?.connected,
+        meetingId
+      });
+    }
+  };
   const transcriptionServiceRef = useRef(new TranscriptionService());
   const transcriptsEndRef = useRef(null);
   const savedTranscriptIdsRef = useRef(new Set());
@@ -244,6 +318,17 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
       effectiveLocalUserName,
       (updatedTranscripts) => {
         setTranscripts([...updatedTranscripts]);
+        
+        // Share new transcription data with other users
+        const newTranscripts = updatedTranscripts.filter(item => 
+          !transcripts.some(existing => existing.id === item.id)
+        );
+        
+        newTranscripts.forEach(transcript => {
+          if (transcript.isFinal) {
+            shareTranscriptionData(transcript);
+          }
+        });
       },
       (errorMessage) => {
         onError?.(errorMessage);

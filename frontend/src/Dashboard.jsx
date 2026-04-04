@@ -92,7 +92,7 @@ export default function Dashboard() {
     const formattedNowTime = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
     const participantMap = new Map();
-    [displayName, user?.firstName, user?.username]
+    [displayName, user?.fullName, user?.username]
       .filter(Boolean)
       .map(name => name.trim())
       .filter(Boolean)
