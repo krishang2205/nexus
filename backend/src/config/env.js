@@ -10,6 +10,8 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'http://localhost:3000,h
 const OPENAI_TRANSCRIBE_MODEL = process.env.OPENAI_TRANSCRIBE_MODEL || 'whisper-1';
 const OPENAI_CHAT_MODEL = process.env.OPENAI_CHAT_MODEL || 'gpt-4o-mini';
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 module.exports = {
   PORT,
@@ -18,4 +20,6 @@ module.exports = {
   OPENAI_TRANSCRIBE_MODEL,
   OPENAI_CHAT_MODEL,
   GEMINI_MODEL,
+  SUPABASE_URL,
+  SUPABASE_SERVICE_ROLE_KEY,
 };

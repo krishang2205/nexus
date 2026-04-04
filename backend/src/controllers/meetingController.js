@@ -1,5 +1,9 @@
 const { v4: uuidv4 } = require('uuid');
-const { saveTranscript, getLatestMeetingInsight } = require('../services/meetingService');
+const {
+  saveTranscript,
+  getMeetingTranscripts: fetchMeetingTranscripts,
+  getLatestMeetingInsight,
+} = require('../services/meetingService');
 
 function generateMeetingId(req, res) {
   const meetingId = uuidv4().substring(0, 8);
@@ -8,7 +12,16 @@ function generateMeetingId(req, res) {
 
 async function saveTranscriptEntry(req, res) {
   try {
-    const { meetingId, userId, speakerName, text, source, timestamp } = req.body || {};
+    const {
+      meetingId,
+      transcriptId,
+      userId,
+      speakerName,
+      text,
+      source,
+      timestamp,
+      isFinal,
+    } = req.body || {};
 
     if (!meetingId || !text) {
       return res.status(400).json({ error: 'meetingId and text are required' });
@@ -16,11 +29,13 @@ async function saveTranscriptEntry(req, res) {
 
     const storage = await saveTranscript({
       meetingId,
+      transcriptId,
       userId,
       speakerName,
       text,
       source: source || 'browser-stt',
       createdAt: timestamp || new Date().toISOString(),
+      isFinal: Boolean(isFinal),
     });
 
     if (!storage.saved) {
@@ -31,6 +46,36 @@ async function saveTranscriptEntry(req, res) {
   } catch (error) {
     console.error('Transcript save error:', error);
     return res.status(500).json({ error: 'Failed to save transcript', details: error.message });
+  }
+}
+
+async function getMeetingTranscripts(req, res) {
+  try {
+    const { meetingId } = req.params;
+    const { since, limit } = req.query;
+
+    const parsedLimit = Number(limit);
+    const options = {
+      since: typeof since === 'string' && since ? since : null,
+      limit: Number.isFinite(parsedLimit) && parsedLimit > 0
+        ? Math.min(parsedLimit, 500)
+        : 200,
+    };
+
+    const result = await fetchMeetingTranscripts(meetingId, options);
+    if (!result.success) {
+      return res.status(400).json({ error: result.error || 'Failed to fetch transcripts' });
+    }
+
+    return res.json({
+      success: true,
+      transcripts: result.transcripts,
+      latestCursor: result.latestCursor,
+      source: result.source,
+    });
+  } catch (error) {
+    console.error('Transcript fetch error:', error);
+    return res.status(500).json({ error: 'Failed to fetch transcripts', details: error.message });
   }
 }
 
@@ -55,5 +100,6 @@ async function getLatestIntelligence(req, res) {
 module.exports = {
   generateMeetingId,
   saveTranscriptEntry,
+  getMeetingTranscripts,
   getLatestIntelligence,
 };

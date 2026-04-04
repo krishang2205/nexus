@@ -1,33 +1,149 @@
+const { supabaseAdmin } = require('../config/clients');
+
 const meetingTranscripts = new Map();
 const meetingInsights = new Map();
 const meetingChats = new Map();
 
-async function saveTranscript({ meetingId, userId, speakerName, text, source = 'browser-stt', createdAt }) {
+function normalizeTranscriptRow(row) {
+  return {
+    id: row.transcript_id,
+    meetingId: row.meeting_id,
+    speakerId: row.user_id,
+    speakerName: row.speaker_name,
+    text: row.transcript_text,
+    source: row.source,
+    isFinal: Boolean(row.is_final),
+    timestamp: row.updated_at || row.created_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function upsertInMemoryTranscript(entry) {
+  if (!meetingTranscripts.has(entry.meeting_id)) {
+    meetingTranscripts.set(entry.meeting_id, []);
+  }
+
+  const transcripts = meetingTranscripts.get(entry.meeting_id);
+  const existingIndex = transcripts.findIndex(item => item.transcript_id === entry.transcript_id);
+
+  if (existingIndex >= 0) {
+    transcripts[existingIndex] = {
+      ...transcripts[existingIndex],
+      ...entry,
+      updated_at: entry.updated_at || new Date().toISOString(),
+    };
+  } else {
+    transcripts.push(entry);
+  }
+
+  if (transcripts.length > 2000) {
+    transcripts.splice(0, transcripts.length - 2000);
+  }
+}
+
+async function saveTranscript({
+  meetingId,
+  transcriptId,
+  userId,
+  speakerName,
+  text,
+  source = 'browser-stt',
+  createdAt,
+  isFinal = false,
+}) {
   if (!meetingId || !text) {
     return { saved: false, reason: 'missing-required-fields' };
   }
 
+  const nowIso = new Date().toISOString();
   const entry = {
+    transcript_id: transcriptId || `${meetingId}-${userId || 'speaker'}-${Date.now()}`,
     meeting_id: meetingId,
     user_id: userId || null,
     speaker_name: speakerName || 'Unknown',
     transcript_text: text,
     source,
-    created_at: createdAt || new Date().toISOString(),
+    is_final: Boolean(isFinal),
+    created_at: createdAt || nowIso,
+    updated_at: nowIso,
   };
 
-  if (!meetingTranscripts.has(meetingId)) {
-    meetingTranscripts.set(meetingId, []);
+  if (supabaseAdmin) {
+    const { error } = await supabaseAdmin
+      .from('meeting_transcripts')
+      .upsert(entry, {
+        onConflict: 'transcript_id',
+      });
+
+    if (error) {
+      console.error('Supabase transcript upsert failed, falling back to memory:', error.message);
+      upsertInMemoryTranscript(entry);
+      return { saved: true, source: 'memory-fallback' };
+    }
+
+    upsertInMemoryTranscript(entry);
+    return { saved: true, source: 'supabase' };
   }
 
-  const transcripts = meetingTranscripts.get(meetingId);
-  transcripts.push(entry);
+  upsertInMemoryTranscript(entry);
+  return { saved: true, source: 'memory' };
+}
 
-  if (transcripts.length > 1000) {
-    transcripts.shift();
+async function getMeetingTranscripts(meetingId, options = {}) {
+  if (!meetingId) {
+    return { success: false, error: 'meetingId is required' };
   }
 
-  return { saved: true };
+  const since = options.since || null;
+  const limit = Number.isFinite(options.limit) ? options.limit : 200;
+
+  if (supabaseAdmin) {
+    let query = supabaseAdmin
+      .from('meeting_transcripts')
+      .select('transcript_id,meeting_id,user_id,speaker_name,transcript_text,source,is_final,created_at,updated_at')
+      .eq('meeting_id', meetingId)
+      .order('updated_at', { ascending: true })
+      .limit(limit);
+
+    if (since) {
+      query = query.gt('updated_at', since);
+    }
+
+    const { data, error } = await query;
+    if (!error) {
+      const transcripts = (data || []).map(normalizeTranscriptRow);
+      const latestCursor = transcripts.length > 0
+        ? transcripts[transcripts.length - 1].updatedAt
+        : since;
+
+      return {
+        success: true,
+        transcripts,
+        latestCursor,
+        source: 'supabase',
+      };
+    }
+
+    console.error('Supabase transcript fetch failed, falling back to memory:', error.message);
+  }
+
+  const rows = (meetingTranscripts.get(meetingId) || [])
+    .filter(row => !since || row.updated_at > since)
+    .sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at))
+    .slice(-limit);
+
+  const transcripts = rows.map(normalizeTranscriptRow);
+  const latestCursor = transcripts.length > 0
+    ? transcripts[transcripts.length - 1].updatedAt
+    : since;
+
+  return {
+    success: true,
+    transcripts,
+    latestCursor,
+    source: 'memory',
+  };
 }
 
 async function getMeetingTranscriptContext(meetingId, fallbackTranscripts = []) {
@@ -40,6 +156,15 @@ async function getMeetingTranscriptContext(meetingId, fallbackTranscripts = []) 
       .filter(item => item && item.text)
       .map(item => `${item.speakerName || 'Speaker'}: ${item.text}`)
       .join('\n');
+  }
+
+  if (meetingId) {
+    const liveRows = await getMeetingTranscripts(meetingId, { limit: 2000 });
+    if (liveRows.success && liveRows.transcripts.length > 0) {
+      return liveRows.transcripts
+        .map(row => `${row.speakerName || 'Speaker'}: ${row.text}`)
+        .join('\n');
+    }
   }
 
   if (!meetingId || !meetingTranscripts.has(meetingId)) {
@@ -92,6 +217,7 @@ async function getLatestMeetingInsight(meetingId) {
 
 module.exports = {
   saveTranscript,
+  getMeetingTranscripts,
   getMeetingTranscriptContext,
   saveInsight,
   saveChat,

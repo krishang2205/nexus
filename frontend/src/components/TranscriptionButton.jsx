@@ -176,6 +176,8 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
   };
   const transcriptionServiceRef = useRef(new TranscriptionService());
   const lastSharedTranscriptsRef = useRef(new Map());
+  const lastPersistedTranscriptsRef = useRef(new Map());
+  const liveCursorRef = useRef(null);
   const transcriptsEndRef = useRef(null);
   const savedTranscriptIdsRef = useRef(new Set());
   const insightsDebounceRef = useRef(null);
@@ -432,12 +434,96 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
   }, [transcripts, isDrawerOpen]);
 
   useEffect(() => {
-    const finalTranscripts = transcripts.filter(item => item?.isFinal && item?.id);
-    if (finalTranscripts.length === 0 || !meetingId) return;
+    if (!meetingId) return;
 
-    finalTranscripts.forEach(async (item) => {
-      if (savedTranscriptIdsRef.current.has(item.id)) return;
-      savedTranscriptIdsRef.current.add(item.id);
+    let isDisposed = false;
+
+    const mergeLiveRows = (rows) => {
+      if (!Array.isArray(rows) || rows.length === 0) return;
+
+      setTranscripts(prev => {
+        const next = [...prev];
+
+        rows.forEach(row => {
+          if (!row?.id || !row?.text) return;
+
+          const existingIndex = next.findIndex(item =>
+            item.id === row.id && item.speakerId === row.speakerId
+          );
+
+          const mapped = {
+            id: row.id,
+            speakerId: row.speakerId,
+            speakerName: row.speakerName || 'Unknown',
+            text: row.text,
+            isFinal: Boolean(row.isFinal),
+            startTime: row.createdAt || row.timestamp || new Date().toISOString(),
+            endTime: row.isFinal ? (row.updatedAt || row.timestamp || new Date().toISOString()) : null,
+            source: row.source || 'db-sync',
+            isRemote: row.speakerId !== effectiveLocalUserId,
+          };
+
+          if (existingIndex >= 0) {
+            next[existingIndex] = {
+              ...next[existingIndex],
+              ...mapped,
+            };
+          } else {
+            next.push(mapped);
+          }
+        });
+
+        return next;
+      });
+    };
+
+    const pollLiveTranscripts = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (liveCursorRef.current) {
+          params.set('since', liveCursorRef.current);
+        }
+        params.set('limit', '250');
+
+        const response = await fetch(buildApiUrl(`/api/meetings/${meetingId}/transcripts?${params.toString()}`));
+        if (!response.ok) return;
+
+        const payload = await response.json();
+        if (isDisposed) return;
+
+        if (payload.latestCursor) {
+          liveCursorRef.current = payload.latestCursor;
+        }
+
+        mergeLiveRows(payload.transcripts || []);
+      } catch (error) {
+        console.warn('Live transcript polling failed:', error?.message || error);
+      }
+    };
+
+    pollLiveTranscripts();
+    const intervalId = setInterval(pollLiveTranscripts, 1200);
+
+    return () => {
+      isDisposed = true;
+      clearInterval(intervalId);
+    };
+  }, [meetingId, API_BASE_URL, effectiveLocalUserId]);
+
+  useEffect(() => {
+    const persistedCandidates = transcripts.filter(item => item?.id && item?.text?.trim());
+    if (persistedCandidates.length === 0 || !meetingId) return;
+
+    persistedCandidates.forEach(async (item) => {
+      const signature = `${item.text.trim()}::${item.isFinal ? 'final' : 'interim'}`;
+      const previousSignature = lastPersistedTranscriptsRef.current.get(item.id);
+      if (previousSignature === signature) return;
+
+      lastPersistedTranscriptsRef.current.set(item.id, signature);
+
+      if (item.isFinal) {
+        savedTranscriptIdsRef.current.add(item.id);
+      }
 
       try {
         await fetch(buildApiUrl('/api/transcripts'), {
@@ -445,11 +531,13 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             meetingId,
-            userId: localUserId,
+            transcriptId: item.id,
+            userId: item.speakerId || localUserId,
             speakerName: item.speakerName || localUserName,
             text: item.text,
-            source: 'browser-stt',
-            timestamp: item.startTime
+            source: item.source || 'browser-stt',
+            timestamp: item.startTime,
+            isFinal: Boolean(item.isFinal),
           })
         });
       } catch (error) {
