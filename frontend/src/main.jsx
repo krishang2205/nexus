@@ -1,9 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import './components/clerk-styles.css'; // Import custom styles for Clerk
-import './components/clerk-fixes.css'; // Import fixes for Clerk components
-import './components/clerk-professional.css'; // Import professional styling for Clerk components
+import './clerk-styles.css'; // Premium theme-adaptive Clerk styling
 import App from './App.jsx';
 import { ClerkProvider } from '@clerk/clerk-react';
 import { AppThemeProvider, useAppTheme } from './theme/AppThemeProvider';
@@ -27,13 +25,13 @@ function ClerkShell() {
           termsPageUrl: false,
         },
         variables: {
-          colorPrimary: isDark ? '#68a0ff' : '#165dff',
-          colorTextOnPrimaryBackground: '#ffffff',
-          colorBackground: isDark ? '#0f192b' : '#ffffff',
-          colorInputBackground: isDark ? '#15233a' : '#f5f8fc',
-          colorInputText: isDark ? '#e4ebfb' : '#263248',
-          colorTextSecondary: isDark ? '#9cb0cf' : '#5f6e84',
-          fontFamily: 'Space Grotesk, Segoe UI, sans-serif',
+          colorPrimary: isDark ? '#ffffff' : '#000000',
+          colorTextOnPrimaryBackground: isDark ? '#000000' : '#ffffff',
+          colorInputBackground: 'var(--bg-dark)',
+          colorInputText: 'var(--text-primary)',
+          colorText: 'var(--text-primary)',
+          colorTextSecondary: 'var(--text-secondary)',
+          fontFamily: 'var(--font-primary), sans-serif',
           borderRadius: '12px',
           spacingUnit: '0.75rem',
         },

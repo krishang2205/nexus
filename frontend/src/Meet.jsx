@@ -2165,17 +2165,32 @@ export default function Meet() {
 		);
 	}
 
-
+	const participantCount = peers.length + 1;
+	const getVideoWidth = () => {
+		if (participantCount === 1) return { xs: '100%', sm: '80%', md: '70%', lg: '60%', xl: '50%' }; // Single user identical to current
+		if (participantCount === 2) return { xs: '100%', sm: '48%' }; // Two users split perfectly side by side
+		if (participantCount <= 4) return { xs: '100%', sm: '48%', lg: '46%' }; // 2x2 grid
+		if (participantCount <= 9) return { xs: '100%', sm: '48%', md: '31%' }; // 3x3 grid
+		if (participantCount <= 16) return { xs: '100%', sm: '31%', lg: '23%' }; // 4x4 grid
+		return { xs: '100%', sm: '31%', md: '23%', lg: '18%' }; // 5x5+ grid
+	};
+	const dynamicWidth = getVideoWidth();
 
 	return (
-		<Box sx={{
+		<Box 
+			className="dashboard-container visible"
+			sx={{
 			height: '100vh',
-			bgcolor: 'var(--surface-soft)',
-			background: 'var(--page-bg)',
+			backgroundColor: 'var(--bg-dark)',
+			color: 'var(--text-primary)',
 			display: 'flex',
 			flexDirection: 'column',
-			fontFamily: 'var(--font-primary)'
+			fontFamily: 'var(--font-primary)',
+			position: 'relative',
+			overflow: 'hidden'
 		}}>
+			{/* Dot-grid background */}
+			<Box className="dashboard-dot-grid" />
 			{/* Add typing animation styles */}
 			<style>{typingAnimationStyles}</style>
 			{/* Connection status notification */}
@@ -2260,17 +2275,17 @@ export default function Meet() {
 			
 			{/* Meeting Info */}
 			<Box sx={{ 
-				p: { xs: 1.5, sm: 2 }, 
-				bgcolor: 'var(--surface-elevated)', 
-				backdropFilter: 'blur(10px)',
+				py: { xs: 1.5, md: 2 },
+				px: { xs: 2, md: 4 },
+				bgcolor: 'transparent',
+				borderBottom: '1px solid var(--bg-border)',
+				backdropFilter: 'blur(20px)',
 				color: 'var(--text-primary)', 
 				display: 'flex', 
 				alignItems: 'center', 
 				justifyContent: 'space-between',
-				boxShadow: 'var(--shadow-soft)',
 				position: 'relative',
-				zIndex: 5,
-				borderBottom: '1px solid var(--border-color)'
+				zIndex: 10
 			}}>
 				<Box sx={{ display: 'flex', alignItems: 'center' }}>
 					<Typography 
@@ -2357,23 +2372,31 @@ export default function Meet() {
 				flex: 1, 
 				display: 'flex', 
 				flexWrap: 'wrap', 
-				gap: { xs: 1, sm: 2, md: 3 }, 
-				p: { xs: 1, sm: 2, md: 3 }, 
+				gap: { xs: 2, md: 4 }, 
+				p: { xs: 2, sm: 4, md: 6 }, 
 				alignItems: 'center', 
 				justifyContent: 'center', 
-				bgcolor: 'var(--surface-soft)',
+				bgcolor: 'transparent',
+                position: 'relative',
+                zIndex: 1,
 				overflowY: 'auto'
 			}}>
-				<Paper elevation={2} sx={{ 
-					p: { xs: 1, sm: 2 }, 
-					bgcolor: 'var(--surface-elevated)', 
+				<Paper elevation={0} sx={{ 
+					p: { xs: 1, sm: 1.5 }, 
+					backgroundColor: 'var(--bg-elevated)', 
 					borderRadius: 'var(--card-radius)',
-					border: '1px solid var(--border-color)',
-					boxShadow: 'var(--shadow-soft)',
+					border: '1px solid var(--bg-border)',
+					boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+					backdropFilter: 'blur(12px)',
+					transition: 'all 0.3s ease',
+					'&:hover': {
+						borderColor: 'var(--text-muted)',
+						boxShadow: '0 10px 40px var(--accent-glow)',
+					},
 					position: 'relative',
 					overflow: 'hidden',
-					width: { xs: '100%', sm: 300, md: 320, lg: 360 },
-					maxWidth: '100%',
+					width: dynamicWidth,
+					maxWidth: '1200px',
 					display: 'flex',
 					flexDirection: 'column'
 				}}>
@@ -2471,17 +2494,23 @@ export default function Meet() {
 						key={peer.id} 
 						id={`peer-${peer.id}`} 
 						className={`peer-video-container${peer.isScreenSharing ? ' screen-sharing' : ''}`} 
-						elevation={2} 
+						elevation={0} 
 						sx={{ 
-						p: { xs: 1, sm: 2 }, 
-						bgcolor: 'var(--surface-elevated)', 
+						p: { xs: 1, sm: 1.5 }, 
+						backgroundColor: 'var(--bg-elevated)', 
 						borderRadius: 'var(--card-radius)',
-						border: '1px solid var(--border-color)',
-						boxShadow: 'var(--shadow-soft)',
+						border: '1px solid var(--bg-border)',
+						boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
+						backdropFilter: 'blur(12px)',
+						transition: 'all 0.3s ease',
+						'&:hover': {
+							borderColor: 'var(--text-muted)',
+							boxShadow: '0 10px 40px var(--accent-glow)',
+						},
 						position: 'relative',
 						overflow: 'hidden',
-						width: { xs: '100%', sm: 300, md: 320, lg: 360 },
-						maxWidth: '100%',
+						width: dynamicWidth,
+						maxWidth: '1200px',
 						display: 'flex',
 						flexDirection: 'column'
 					}}>
@@ -2579,18 +2608,30 @@ export default function Meet() {
 				))}
 			</Box>
 			{/* Controls */}
-			<Box sx={{ 
-				display: 'flex', 
-				justifyContent: 'center', 
-				alignItems: 'center',
-				gap: { xs: 1, sm: 2 }, 
-				p: { xs: 1.5, sm: 2 }, 
-				bgcolor: 'var(--surface-elevated)',
-				boxShadow: '0 -2px 10px rgba(0,0,0,0.05)',
-				borderTop: '1px solid var(--border-color)',
-				position: 'relative',
-				zIndex: 5
+			<Box sx={{
+				position: 'absolute',
+				bottom: 0,
+				left: 0,
+				right: 0,
+				p: { xs: 2, md: 4 },
+				pointerEvents: 'none',
+				display: 'flex',
+				justifyContent: 'center',
+				zIndex: 100
 			}}>
+				<Box sx={{ 
+					display: 'flex', 
+					justifyContent: 'center', 
+					alignItems: 'center',
+					gap: { xs: 1, sm: 2 }, 
+					p: { xs: 1, sm: 1.5 }, 
+					backgroundColor: 'var(--bg-elevated)',
+					borderRadius: '100px',
+					border: '1px solid var(--bg-border)',
+					boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
+					backdropFilter: 'blur(20px)',
+					pointerEvents: 'auto'
+				}}>
 				<IconButton 
 					onClick={toggleMic} 
 					sx={{ 
@@ -2700,6 +2741,7 @@ export default function Meet() {
 					onError={(message) => showError(message, 'error')}
 				/>
 				*/}
+				</Box>
 			</Box>
 			{/* Chat Sidebar */}
 			{chatOpen && (
@@ -2707,19 +2749,20 @@ export default function Meet() {
 					position: 'fixed', 
 					right: 0, 
 					top: 0, 
-					width: { xs: '100%', sm: 320 }, 
+					width: { xs: '100%', sm: 360 }, 
 					height: '100vh', 
-					bgcolor: 'var(--surface-elevated)', 
-					boxShadow: 'var(--shadow-strong)', 
+					backgroundColor: 'var(--bg-dark)', 
+					boxShadow: '-10px 0 40px rgba(0,0,0,0.5)', 
 					zIndex: 200, 
 					display: 'flex', 
-					flexDirection: 'column'
+					flexDirection: 'column',
+					borderLeft: '1px solid var(--bg-border)'
 				}}>
 					<Box sx={{ 
-						p: 2, 
-						borderBottom: '1px solid var(--border-color)', 
-						bgcolor: 'var(--color-primary)', 
-						color: '#fff', 
+						p: 2.5, 
+						borderBottom: '1px solid var(--bg-border)', 
+						backgroundColor: 'var(--bg-elevated)', 
+						color: 'var(--text-primary)', 
 						display: 'flex', 
 						alignItems: 'center', 
 						justifyContent: 'space-between'
@@ -2730,11 +2773,12 @@ export default function Meet() {
 							variant="outlined"
 							onClick={() => setChatOpen(false)} 
 							sx={{ 
-								color: '#fff', 
-								borderColor: 'rgba(255,255,255,0.5)',
+								color: 'var(--text-secondary)', 
+								borderColor: 'var(--bg-border)',
 								'&:hover': {
-									borderColor: '#fff',
-									backgroundColor: 'rgba(255,255,255,0.1)'
+									color: 'var(--text-primary)',
+									borderColor: 'var(--text-muted)',
+									backgroundColor: 'var(--surface-soft)'
 								}
 							}}
 						>
@@ -2746,7 +2790,7 @@ export default function Meet() {
 							flex: 1, 
 							overflowY: 'auto', 
 							p: 2, 
-							bgcolor: 'var(--surface-soft)',
+							backgroundColor: 'var(--bg-dark)',
 							display: 'flex',
 							flexDirection: 'column'
 						}}
@@ -2851,7 +2895,7 @@ export default function Meet() {
 										<Paper sx={{ 
 											display: 'inline-block', 
 											p: 1.5, 
-											bgcolor: isMyMessage ? 'rgba(106, 17, 203, 0.05)' : '#fff', 
+											bgcolor: isMyMessage ? 'rgba(106, 17, 203, 0.15)' : 'var(--bg-elevated)', 
 											color: 'var(--text-primary)', 
 											borderRadius: 2,
 											borderBottomRightRadius: isMyMessage ? 0 : 2,
@@ -2861,8 +2905,8 @@ export default function Meet() {
 											boxShadow: 'var(--shadow-soft)',
 											position: 'relative',
 											opacity: msg.pending ? 0.7 : 1,
-											border: msg.failed ? '1px solid var(--color-error, #f44336)' : 'none',
-											backgroundColor: msg.failed ? 'rgba(244, 67, 54, 0.05)' : (isMyMessage ? 'rgba(106, 17, 203, 0.05)' : '#fff')
+											border: msg.failed ? '1px solid var(--color-error, #f44336)' : '1px solid var(--bg-border)',
+											backgroundColor: msg.failed ? 'rgba(244, 67, 54, 0.05)' : (isMyMessage ? 'rgba(106, 17, 203, 0.15)' : 'var(--bg-elevated)')
 										}}>
 											{msg.text}
 											
@@ -3014,7 +3058,7 @@ export default function Meet() {
 							</Box>
 						)}
 					</Box>
-					<Box sx={{ p: 2, borderTop: '1px solid rgba(0,0,0,0.08)', display: 'flex', alignItems: 'center', gap: 1 }}>
+					<Box sx={{ p: 2, borderTop: '1px solid var(--bg-border)', display: 'flex', alignItems: 'center', gap: 1 }}>
 						<TextField
 							fullWidth
 							variant="outlined"
@@ -3052,7 +3096,7 @@ export default function Meet() {
 								borderRadius: 'var(--input-radius)',
 								'& .MuiOutlinedInput-root': {
 									borderRadius: 'var(--input-radius)',
-									backgroundColor: 'rgba(245, 247, 250, 0.8)'
+									backgroundColor: 'var(--bg-elevated)'
 								}
 							}}
 						/>
@@ -3084,9 +3128,10 @@ export default function Meet() {
 						right: 20,
 						padding: 2,
 						borderRadius: 'var(--card-radius)',
-						backgroundColor: 'rgba(255, 255, 255, 0.95)',
+						backgroundColor: 'var(--bg-elevated)',
 						backdropFilter: 'blur(10px)',
-						boxShadow: 'var(--shadow-strong)',
+						border: '1px solid var(--bg-border)',
+						boxShadow: '0 10px 30px rgba(0,0,0,0.3)',
 						zIndex: 100,
 						maxWidth: 300,
 						animation: 'fadeIn 0.3s ease-in-out',

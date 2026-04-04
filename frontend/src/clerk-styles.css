@@ -1,117 +1,125 @@
-/* Custom styling for Clerk components */
-:root {
-  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-secondary: 'Poppins', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --color-primary: #6a11cb;
-  --color-secondary: #2575fc;
-  --color-accent: #ff4081;
-  --text-primary: #333;
-  --text-secondary: #555;
-  --text-muted: #777;
-  --background-light: #f8f9fa;
-  --card-radius: 16px;
-  --button-radius: 12px;
-  --input-radius: 8px;
-  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.08);
-  --shadow-strong: 0 8px 30px rgba(0, 0, 0, 0.12);
-  --shadow-glow: 0 4px 20px rgba(106, 17, 203, 0.2);
-  --gradient-primary: linear-gradient(135deg, #f5f7fa 0%, #e0e7ff 100%);
-  --gradient-secondary: linear-gradient(135deg, #ffffff 0%, #f5f7fa 100%);
-  --gradient-accent: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
-}
-
-/* Clerk Customizations */
+/* Sleek, Classic styling for Clerk components */
 .cl-rootBox {
   width: 100%;
-  font-family: var(--font-primary);
+  font-family: var(--font-primary) !important;
 }
 
 .cl-card {
-  border-radius: var(--card-radius) !important;
-  box-shadow: none !important;
-  background: transparent !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  border-radius: var(--radius-lg) !important;
+  background: var(--bg-elevated) !important;
+  border: 1px solid var(--bg-border) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25) !important;
+  padding: 2rem 1.75rem !important;
+  transition: border-color 0.4s ease !important;
+  margin: 0 auto !important;
 }
 
 .cl-headerTitle {
-  font-family: var(--font-secondary) !important;
+  font-family: var(--font-heading) !important;
   font-weight: 700 !important;
-  background: linear-gradient(90deg, #6a11cb 0%, #2575fc 100%);
-  background-clip: text !important;
-  -webkit-background-clip: text !important;
-  -webkit-text-fill-color: transparent !important;
+  color: var(--text-primary) !important;
+  font-size: 1.5rem !important;
 }
 
 .cl-headerSubtitle {
   color: var(--text-secondary) !important;
+  font-family: var(--font-primary) !important;
 }
 
-.cl-button-primary {
-  background: var(--gradient-accent) !important;
-  font-weight: 600 !important;
-  border-radius: var(--button-radius) !important;
-  box-shadow: var(--shadow-glow) !important;
-  transition: all 0.3s ease !important;
-}
-
-.cl-button-primary:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 30px rgba(106, 17, 203, 0.25) !important;
-}
-
-.cl-formButtonPrimary, .btn-primary {
-  background: var(--gradient-accent) !important;
+/* Primary Button Override */
+.cl-button-primary, .cl-formButtonPrimary {
+  background: var(--text-primary) !important;
+  color: var(--bg-dark) !important;
   font-weight: 600 !important;
   border-radius: var(--button-radius) !important;
   padding: 12px 16px !important;
-  box-shadow: var(--shadow-glow) !important;
   transition: all 0.3s ease !important;
+  font-family: var(--font-primary) !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
-.cl-formButtonPrimary:hover, .btn-primary:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 30px rgba(106, 17, 203, 0.25) !important;
+.cl-button-primary:hover, .cl-formButtonPrimary:hover {
+  background: #d4d4d4 !important;
+  transform: translateY(-1px) !important;
 }
 
-.cl-formFieldInput, .input-styled {
-  border-radius: var(--input-radius) !important;
-  padding: 12px !important;
-  border: 1px solid rgba(0,0,0,0.1) !important;
+/* Input Fields */
+.cl-formFieldInput {
+  border-radius: var(--radius-md) !important;
+  padding: 12px 16px !important;
+  border: 1px solid var(--bg-border) !important;
+  background: var(--bg-dark) !important;
+  color: var(--text-primary) !important;
   transition: all 0.2s ease !important;
-  background: rgba(255, 255, 255, 0.8) !important;
+  font-family: var(--font-primary) !important;
 }
 
-.cl-formFieldInput:focus, .input-styled:focus {
-  border-color: var(--color-primary) !important;
-  box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2) !important;
+.cl-formFieldInput:focus {
+  border-color: var(--text-secondary) !important;
+  box-shadow: 0 0 0 1px var(--text-secondary) !important;
   outline: none !important;
 }
 
-.cl-footerActionLink, .link-styled {
-  color: var(--color-primary) !important;
+/* Labels and text */
+.cl-formFieldLabel {
+  color: var(--text-secondary) !important;
+  font-family: var(--font-primary) !important;
   font-weight: 500 !important;
 }
 
-.cl-footerActionLink:hover, .link-styled:hover {
+.cl-footerActionLink {
+  color: var(--text-primary) !important;
+  font-weight: 500 !important;
+  transition: color 0.2s ease !important;
+}
+
+.cl-footerActionLink:hover {
+  color: var(--text-secondary) !important;
   text-decoration: underline !important;
 }
 
-/* Animation for the card */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
+.cl-footerActionText {
+  color: var(--text-muted) !important;
+}
+
+.cl-dividerLine {
+  background: var(--bg-border) !important;
+}
+
+.cl-dividerText {
+  color: var(--text-muted) !important;
+}
+
+.cl-socialButtonsBlockButton {
+  border: 1px solid var(--bg-border) !important;
+  background: var(--bg-dark) !important;
+  color: var(--text-primary) !important;
+  border-radius: var(--radius-md) !important;
+  transition: all 0.2s ease !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  background: var(--bg-border) !important;
+}
+
+.cl-internal-b3al4t { /* internal text elements occasionally */
+  color: var(--text-secondary) !important;
+}
+
+.auth-card-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(15px); }
   to { opacity: 1; transform: translateY(0); }
-}
-
-.auth-card {
-  animation: fadeIn 0.5s ease-out forwards;
-}
-
-/* Responsive adjustments */
-@media (max-width: 600px) {
-  .cl-card {
-    padding: 16px !important;
-  }
-  
-  .cl-headerTitle {
-    font-size: 24px !important;
-  }
 }

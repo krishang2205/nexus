@@ -18,10 +18,10 @@ function Pill({ children }) {
         gap: 6,
         padding: '4px 10px',
         borderRadius: 999,
-        border: '1px solid rgba(0,0,0,0.08)',
-        background: 'rgba(255,255,255,0.8)',
+        border: '1px solid var(--bg-border)',
+        background: 'var(--bg-surface)',
         fontSize: 12,
-        color: '#374151',
+        color: 'var(--text-secondary)',
         whiteSpace: 'nowrap'
       }}
     >
@@ -39,12 +39,13 @@ function Toggle({ active, onChange }) {
         width: 38,
         height: 22,
         borderRadius: 999,
-        border: '1px solid rgba(0,0,0,0.08)',
-        background: active ? 'rgba(34,197,94,0.2)' : 'rgba(156,163,175,0.2)',
+        border: '1px solid var(--bg-border)',
+        background: active ? 'rgba(255,255,255,0.15)' : 'var(--bg-surface)',
         display: 'flex',
         alignItems: 'center',
         padding: 2,
-        cursor: 'pointer'
+        cursor: 'pointer',
+        transition: 'background 0.2s ease',
       }}
     >
       <span
@@ -52,9 +53,9 @@ function Toggle({ active, onChange }) {
           width: 16,
           height: 16,
           borderRadius: '50%',
-          background: active ? '#22c55e' : '#9ca3af',
+          background: active ? 'var(--text-primary)' : 'var(--text-muted)',
           transform: active ? 'translateX(16px)' : 'translateX(0)',
-          transition: 'transform 0.2s ease'
+          transition: 'all 0.2s ease'
         }}
       />
     </button>
@@ -64,7 +65,7 @@ function Toggle({ active, onChange }) {
 function Row({ icon, label, children }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6b7280', minWidth: 120 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: 'var(--text-muted)', minWidth: 120 }}>
         {icon}
         <span style={{ fontSize: 12, fontWeight: 600 }}>{label}</span>
       </div>
@@ -90,11 +91,11 @@ export default function MeetingCard({
   return (
     <div
       style={{
-        border: '1px solid var(--border-color)',
+        border: '1px solid var(--bg-border)',
         borderRadius: 16,
         overflow: 'hidden',
-        background: 'var(--surface-elevated)',
-        boxShadow: 'var(--shadow-soft)'
+        background: 'var(--bg-surface)',
+        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
       }}
     >
       <button
@@ -112,11 +113,19 @@ export default function MeetingCard({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: '#BB89FA', color: '#fff', display: 'grid', placeItems: 'center' }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: 10,
+            background: 'var(--text-primary)', color: 'var(--bg-dark)',
+            display: 'grid', placeItems: 'center',
+          }}>
             <CalendarMonthIcon fontSize="small" />
           </div>
           <div style={{ textAlign: 'left', minWidth: 0 }}>
-            <div style={{ fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{title}</div>
+            <div style={{
+              fontWeight: 700, color: 'var(--text-primary)',
+              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+              fontFamily: 'var(--font-heading)', fontSize: 14,
+            }}>{title}</div>
             <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>Today, {time}</div>
           </div>
         </div>
@@ -127,18 +136,26 @@ export default function MeetingCard({
                 key={p.name}
                 src={p.avatar}
                 alt={p.name}
-                style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #fff', marginLeft: -6 }}
+                style={{
+                  width: 24, height: 24, borderRadius: '50%',
+                  border: '2px solid var(--bg-elevated)', marginLeft: -6,
+                }}
               />
             ))}
           </div>
-          <span style={{ width: 28, height: 28, borderRadius: 8, border: '1px solid var(--border-color)', display: 'grid', placeItems: 'center', color: 'var(--text-muted)' }}>
+          <span style={{
+            width: 28, height: 28, borderRadius: 8,
+            border: '1px solid var(--bg-border)',
+            display: 'grid', placeItems: 'center',
+            color: 'var(--text-muted)',
+          }}>
             {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
           </span>
         </div>
       </button>
 
       {expanded && (
-        <div style={{ borderTop: '1px solid var(--border-color)', padding: 14, display: 'grid', gap: 12 }}>
+        <div style={{ borderTop: '1px solid var(--bg-border)', padding: 14, display: 'grid', gap: 12 }}>
           <Row icon={<CalendarMonthIcon sx={{ fontSize: 15 }} />} label="Date">
             <Pill>{date}</Pill>
           </Row>
@@ -168,11 +185,19 @@ export default function MeetingCard({
             <Toggle active={isAiEnabled} onChange={setIsAiEnabled} />
           </Row>
 
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 10 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8 }}>Participants</div>
+          <div style={{ borderTop: '1px solid var(--bg-border)', paddingTop: 10 }}>
+            <div style={{
+              fontSize: 12, fontWeight: 600, color: 'var(--text-muted)',
+              marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.08em',
+            }}>Participants</div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {participants.map((p) => (
-                <div key={p.name} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 8px', border: '1px solid var(--border-color)', borderRadius: 999 }}>
+                <div key={p.name} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '4px 8px',
+                  border: '1px solid var(--bg-border)',
+                  borderRadius: 999,
+                }}>
                   <img src={p.avatar} alt={p.name} style={{ width: 20, height: 20, borderRadius: '50%' }} />
                   <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-primary)' }}>{p.name}</span>
                 </div>
@@ -180,33 +205,19 @@ export default function MeetingCard({
             </div>
           </div>
 
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 10 }}>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', marginBottom: 6 }}>Description</div>
-            <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{description}</div>
+          <div style={{ borderTop: '1px solid var(--bg-border)', paddingTop: 10 }}>
+            <div style={{
+              fontSize: 12, fontWeight: 600, color: 'var(--text-muted)',
+              marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.08em',
+            }}>Description</div>
+            <div style={{ fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{description}</div>
           </div>
 
-          <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: 10, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            {/* <span style={{ fontSize: 13, color: 'var(--text-secondary)', fontWeight: 600 }}>Going?</span> */}
-            {/* <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-              {['Yes', 'No', 'Maybe'].map((opt) => (
-                <button
-                  key={opt}
-                  type="button"
-                  style={{
-                    border: '1px solid var(--border-color)',
-                    background: 'var(--surface-elevated)',
-                    borderRadius: 999,
-                    padding: '4px 10px',
-                    fontSize: 12,
-                    cursor: 'pointer',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  {opt}
-                </button>
-              ))}
-              <MoreHorizIcon sx={{ color: 'var(--text-muted)', fontSize: 18 }} />
-            </div> */}
+          <div style={{
+            borderTop: '1px solid var(--bg-border)', paddingTop: 10,
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+            gap: 8, flexWrap: 'wrap',
+          }}>
           </div>
         </div>
       )}

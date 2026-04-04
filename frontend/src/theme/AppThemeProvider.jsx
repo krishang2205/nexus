@@ -40,19 +40,19 @@ export function AppThemeProvider({ children }) {
           main: isDark ? '#56d4da' : '#0fa3b1',
         },
         background: {
-          default: isDark ? '#0b1320' : '#f2f6fb',
-          paper: isDark ? '#111d30' : '#ffffff',
+          default: isDark ? '#030303' : '#f8f9fa',
+          paper: isDark ? '#0a0a0a' : '#ffffff',
         },
         text: {
-          primary: isDark ? '#edf2ff' : '#152033',
-          secondary: isDark ? '#afbdd2' : '#5b687a',
+          primary: isDark ? '#f0f0f0' : '#0f172a',
+          secondary: isDark ? '#a0a0a0' : '#475569',
         },
       },
       shape: {
         borderRadius: 14,
       },
       typography: {
-        fontFamily: 'Space Grotesk, Segoe UI, sans-serif',
+        fontFamily: 'var(--font-primary)',
         button: {
           textTransform: 'none',
           fontWeight: 600,
