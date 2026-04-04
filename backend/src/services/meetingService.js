@@ -127,7 +127,7 @@ async function getMeetingTranscripts(meetingId, options = {}) {
       .limit(limit);
 
     if (since) {
-      query = query.gt('updated_at', since);
+      query = query.gte('updated_at', since);
     }
 
     const { data, error } = await query;
@@ -149,7 +149,7 @@ async function getMeetingTranscripts(meetingId, options = {}) {
   }
 
   const rows = (meetingTranscripts.get(meetingId) || [])
-    .filter(row => !since || row.updated_at > since)
+    .filter(row => !since || row.updated_at >= since)
     .sort((a, b) => new Date(a.updated_at) - new Date(b.updated_at))
     .slice(-limit);
 

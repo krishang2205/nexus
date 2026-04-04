@@ -212,6 +212,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
   const lastSharedTranscriptsRef = useRef(new Map());
   const lastPersistedTranscriptsRef = useRef(new Map());
   const liveCursorRef = useRef(null);
+  const pollCycleRef = useRef(0);
   const transcriptsEndRef = useRef(null);
   const savedTranscriptIdsRef = useRef(new Set());
   const insightsDebounceRef = useRef(null);
@@ -560,7 +561,10 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
     const pollLiveTranscripts = async () => {
       try {
         const params = new URLSearchParams();
-        if (liveCursorRef.current) {
+        pollCycleRef.current += 1;
+        const forceFullResync = pollCycleRef.current % 8 === 0;
+
+        if (liveCursorRef.current && !forceFullResync) {
           params.set('since', liveCursorRef.current);
         }
         params.set('limit', '250');
