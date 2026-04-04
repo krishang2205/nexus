@@ -8,10 +8,10 @@ const Hero = ({ onStartTrial }) => {
     <Box
       sx={{
         position: 'relative',
-        pt: { xs: 20, md: 28 },
-        pb: { xs: 12, md: 20 },
+        pt: { xs: 16, md: 20 },
+        pb: { xs: 8, md: 12 },
         zIndex: 1,
-        minHeight: '90vh',
+        minHeight: { xs: '78vh', md: '74vh' },
         display: 'flex',
         alignItems: 'center',
       }}
@@ -45,7 +45,7 @@ const Hero = ({ onStartTrial }) => {
       />
 
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', maxWidth: '900px', mx: 'auto' }}>
+        <Box sx={{ textAlign: 'center', maxWidth: '760px', mx: 'auto' }}>
           {/* Eyebrow */}
           <Box
             component={motion.div}
@@ -63,7 +63,7 @@ const Hero = ({ onStartTrial }) => {
                 fontWeight: 600,
               }}
             >
-              Enterprise Meeting Intelligence
+              Nexus Command Layer
             </Typography>
           </Box>
 
@@ -75,11 +75,11 @@ const Hero = ({ onStartTrial }) => {
             transition={{ duration: 1, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
             variant="h1"
             sx={{
-              fontSize: { xs: '3rem', sm: '4.5rem', md: '6rem' },
+              fontSize: { xs: '2rem', sm: '2.6rem', md: '3.2rem' },
               fontWeight: 800,
-              lineHeight: 1,
-              letterSpacing: '-0.04em',
-              mb: 4,
+              lineHeight: 1.08,
+              letterSpacing: '-0.02em',
+              mb: 3,
               color: 'var(--text-primary)',
               fontFamily: 'var(--font-heading)',
             }}
@@ -96,12 +96,12 @@ const Hero = ({ onStartTrial }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             sx={{
-              fontSize: { xs: '1.1rem', md: '1.3rem' },
-              maxWidth: 620,
+              fontSize: { xs: '0.98rem', md: '1.05rem' },
+              maxWidth: 640,
               mx: 'auto',
               color: 'var(--text-secondary)',
-              lineHeight: 1.5,
-              mb: 6,
+              lineHeight: 1.6,
+              mb: 4,
               fontWeight: 400,
             }}
           >
@@ -122,9 +122,9 @@ const Hero = ({ onStartTrial }) => {
               component="button"
               className="btn-premium"
               onClick={onStartTrial}
-              sx={{ py: 2, px: 5, fontSize: '1.1rem' }}
+              sx={{ py: 1.6, px: 4, fontSize: '0.95rem' }}
             >
-              Get Started Free <ArrowOutward sx={{ ml: 1, fontSize: '1.2rem' }} />
+              Open Dashboard <ArrowOutward sx={{ ml: 1, fontSize: '1.2rem' }} />
             </Box>
 
             <Box
@@ -133,9 +133,9 @@ const Hero = ({ onStartTrial }) => {
               onClick={() => {
                 document.getElementById('product-preview')?.scrollIntoView({ behavior: 'smooth' });
               }}
-              sx={{ py: 2, px: 5, fontSize: '1.1rem' }}
+              sx={{ py: 1.6, px: 4, fontSize: '0.95rem' }}
             >
-              See How It Works
+              View Capability States
             </Box>
           </Stack>
 
@@ -146,7 +146,7 @@ const Hero = ({ onStartTrial }) => {
             animate={{ opacity: 1 }}
             transition={{ duration: 1, delay: 0.6 }}
             sx={{
-              mt: 8,
+              mt: 5,
               display: 'flex',
               flexWrap: 'wrap',
               justifyContent: 'center',
@@ -170,7 +170,7 @@ const Hero = ({ onStartTrial }) => {
                 <Typography
                   sx={{
                     color: 'var(--text-muted)',
-                    fontSize: '0.82rem',
+                    fontSize: '0.76rem',
                     fontWeight: 500,
                   }}
                 >

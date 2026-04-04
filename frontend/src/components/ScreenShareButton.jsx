@@ -1087,13 +1087,18 @@ function ScreenShareButton({
             onClick={toggleScreenSharing}
             disabled={!isSupported || (!isScreenSharing && someoneElseSharing)}
             sx={{ 
-              bgcolor: isScreenSharing ? 'rgba(76, 175, 80, 0.1)' : 'rgba(156, 39, 176, 0.1)', 
+              bgcolor: isScreenSharing ? 'rgba(34, 197, 94, 0.15)' : 'rgba(37, 99, 235, 0.14)', 
               color: isScreenSharing ? 'var(--color-success)' : 'var(--color-primary)', 
-              borderRadius: 'var(--button-radius)',
-              p: { xs: 1, sm: 1.5 },
+              borderRadius: '50%',
+              width: { xs: 42, sm: 48 },
+              height: { xs: 42, sm: 48 },
+              border: '1px solid var(--bg-border)',
+              transition: 'all 0.2s ease',
               position: 'relative',
               '&:hover': {
-                bgcolor: isScreenSharing ? 'rgba(76, 175, 80, 0.2)' : 'rgba(156, 39, 176, 0.2)'
+                bgcolor: isScreenSharing ? 'rgba(34, 197, 94, 0.24)' : 'rgba(37, 99, 235, 0.22)',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 8px 18px rgba(0,0,0,0.22)'
               },
               // Animated pulsing effect when sharing
               ...(isScreenSharing && {

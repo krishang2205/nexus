@@ -2609,55 +2609,76 @@ export default function Meet() {
 			</Box>
 			{/* Controls */}
 			<Box sx={{
-				position: 'absolute',
-				bottom: 0,
+				position: 'fixed',
+				bottom: { xs: 10, sm: 18 },
 				left: 0,
 				right: 0,
-				p: { xs: 2, md: 4 },
+				p: { xs: 1.5, sm: 2 },
 				pointerEvents: 'none',
 				display: 'flex',
 				justifyContent: 'center',
-				zIndex: 100
+				zIndex: 140
 			}}>
 				<Box sx={{ 
 					display: 'flex', 
 					justifyContent: 'center', 
 					alignItems: 'center',
-					gap: { xs: 1, sm: 2 }, 
-					p: { xs: 1, sm: 1.5 }, 
+					gap: { xs: 0.8, sm: 1.25 }, 
+					p: { xs: 1, sm: 1.1 }, 
 					backgroundColor: 'var(--bg-elevated)',
-					borderRadius: '100px',
+					borderRadius: '999px',
 					border: '1px solid var(--bg-border)',
-					boxShadow: '0 20px 40px rgba(0,0,0,0.3)',
-					backdropFilter: 'blur(20px)',
-					pointerEvents: 'auto'
+					boxShadow: '0 18px 40px rgba(0,0,0,0.28)',
+					backdropFilter: 'blur(16px)',
+					WebkitBackdropFilter: 'blur(16px)',
+					pointerEvents: 'auto',
+					maxWidth: 'calc(100vw - 20px)',
+					overflowX: 'auto',
+					'&::-webkit-scrollbar': { display: 'none' },
+					scrollbarWidth: 'none'
 				}}>
-				<IconButton 
-					onClick={toggleMic} 
-					sx={{ 
-						bgcolor: micOn ? 'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)', 
-						color: micOn ? 'var(--color-success)' : 'var(--color-error)', 
-						borderRadius: 'var(--button-radius)',
-						p: { xs: 1, sm: 1.5 }
-					}}
-				>
-					{micOn ? <MicIcon /> : <MicOffIcon />}
-				</IconButton>
-				<IconButton 
-					onClick={toggleVideo} 
-					sx={{ 
-						bgcolor: videoOn ? 'rgba(33, 150, 243, 0.1)' : 'rgba(255, 152, 0, 0.1)', 
-						color: videoOn ? 'var(--color-secondary)' : 'var(--color-warning)', 
-						borderRadius: 'var(--button-radius)',
-						p: { xs: 1, sm: 1.5 }
-					}}
-				>
-					{videoOn ? <VideocamIcon /> : <VideocamOffIcon />}
-				</IconButton>
+				<Tooltip title={micOn ? 'Mute microphone' : 'Unmute microphone'}>
+					<IconButton 
+						onClick={toggleMic} 
+						sx={{ 
+							bgcolor: micOn ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.14)', 
+							color: micOn ? 'var(--color-success)' : 'var(--color-error)', 
+							borderRadius: '50%',
+							width: { xs: 42, sm: 48 },
+							height: { xs: 42, sm: 48 },
+							border: '1px solid var(--bg-border)',
+							transition: 'all 0.2s ease',
+							'&:hover': {
+								transform: 'translateY(-1px)',
+								boxShadow: '0 8px 18px rgba(0,0,0,0.22)'
+							}
+						}}
+					>
+						{micOn ? <MicIcon /> : <MicOffIcon />}
+					</IconButton>
+				</Tooltip>
+				<Tooltip title={videoOn ? 'Turn camera off' : 'Turn camera on'}>
+					<IconButton 
+						onClick={toggleVideo} 
+						sx={{ 
+							bgcolor: videoOn ? 'rgba(37, 99, 235, 0.14)' : 'rgba(217, 119, 6, 0.14)', 
+							color: videoOn ? 'var(--color-secondary)' : 'var(--color-warning)', 
+							borderRadius: '50%',
+							width: { xs: 42, sm: 48 },
+							height: { xs: 42, sm: 48 },
+							border: '1px solid var(--bg-border)',
+							transition: 'all 0.2s ease',
+							'&:hover': {
+								transform: 'translateY(-1px)',
+								boxShadow: '0 8px 18px rgba(0,0,0,0.22)'
+							}
+						}}
+					>
+						{videoOn ? <VideocamIcon /> : <VideocamOffIcon />}
+					</IconButton>
+				</Tooltip>
 				
-				{/*
-				Screen Share Button (temporarily hidden for demo)
-				<ScreenShareButton
+				{/* <ScreenShareButton
 					onScreenShare={handleScreenShare}
 					onStopScreenShare={handleStopScreenShare}
 					socketRef={socketRef}
@@ -2667,37 +2688,54 @@ export default function Meet() {
 					isScreenSharing={isScreenSharing}
 					setIsScreenSharing={setIsScreenSharing}
 					activeScreenSharingUser={activeScreenSharingUser}
-				/>
-				*/}
+				/> */}
 				
-				<IconButton 
-					onClick={leaveMeeting} 
-					sx={{ 
-						bgcolor: 'rgba(244, 67, 54, 0.1)', 
-						color: 'var(--color-error)', 
-						borderRadius: 'var(--button-radius)',
-						p: { xs: 1, sm: 1.5 }
-					}}
-				>
-					<CallEndIcon />
-				</IconButton>
-				<IconButton 
-					onClick={() => {
-						setChatOpen(!chatOpen);
-						if (!chatOpen) {
-							// Reset unread count when opening chat
-							setUnreadMessages(0);
-							setLastMessageNotification(null);
-						}
-					}} 
-					sx={{ 
-						bgcolor: chatOpen ? 'rgba(106, 27, 154, 0.1)' : (unreadMessages > 0 ? 'rgba(233, 30, 99, 0.1)' : 'rgba(0, 0, 0, 0.05)'), 
-						color: chatOpen ? 'var(--color-primary)' : (unreadMessages > 0 ? 'var(--color-error)' : 'var(--text-secondary)'), 
-						borderRadius: 'var(--button-radius)',
-						p: { xs: 1, sm: 1.5 },
-						position: 'relative'
-					}}
-				>
+				<Tooltip title="Leave meeting">
+					<IconButton 
+						onClick={leaveMeeting} 
+						sx={{ 
+							bgcolor: 'rgba(220, 38, 38, 0.14)', 
+							color: 'var(--color-error)', 
+							borderRadius: '50%',
+							width: { xs: 42, sm: 48 },
+							height: { xs: 42, sm: 48 },
+							border: '1px solid var(--bg-border)',
+							transition: 'all 0.2s ease',
+							'&:hover': {
+								bgcolor: 'rgba(220, 38, 38, 0.22)',
+								transform: 'translateY(-1px)',
+								boxShadow: '0 8px 18px rgba(0,0,0,0.22)'
+							}
+						}}
+					>
+						<CallEndIcon />
+					</IconButton>
+				</Tooltip>
+				<Tooltip title={chatOpen ? 'Close chat' : 'Open chat'}>
+					<IconButton 
+						onClick={() => {
+							setChatOpen(!chatOpen);
+							if (!chatOpen) {
+								// Reset unread count when opening chat
+								setUnreadMessages(0);
+								setLastMessageNotification(null);
+							}
+						}} 
+						sx={{ 
+							bgcolor: chatOpen ? 'rgba(37, 99, 235, 0.14)' : (unreadMessages > 0 ? 'rgba(220, 38, 38, 0.14)' : 'var(--surface-soft)'), 
+							color: chatOpen ? 'var(--color-primary)' : (unreadMessages > 0 ? 'var(--color-error)' : 'var(--text-secondary)'), 
+							borderRadius: '50%',
+							width: { xs: 42, sm: 48 },
+							height: { xs: 42, sm: 48 },
+							border: '1px solid var(--bg-border)',
+							transition: 'all 0.2s ease',
+							position: 'relative',
+							'&:hover': {
+								transform: 'translateY(-1px)',
+								boxShadow: '0 8px 18px rgba(0,0,0,0.22)'
+							}
+						}}
+					>
 					<ChatIcon />
 					{unreadMessages > 0 && (
 						<Box 
@@ -2721,16 +2759,14 @@ export default function Meet() {
 						</Box>
 					)}
 				</IconButton>
+				</Tooltip>
 				
-				{/*
-				Recording Button (temporarily hidden for demo)
-				<RecordingButton 
+				{/* <RecordingButton 
 					localStream={streamRef.current} 
 					peerRefs={peersRef}
 					onError={(message) => showError(message, 'error')}
-				/>
+				/> */}
 
-				Transcription Button (temporarily hidden for demo)
 				<TranscriptionButton 
 					localUserId={socketRef.current?.id || ''}
 					localUserName={username}
@@ -2740,7 +2776,7 @@ export default function Meet() {
 					peerRefs={peersRef}
 					onError={(message) => showError(message, 'error')}
 				/>
-				*/}
+				
 				</Box>
 			</Box>
 			{/* Chat Sidebar */}

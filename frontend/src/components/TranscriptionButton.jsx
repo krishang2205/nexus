@@ -934,7 +934,7 @@ function TranscriptionButton({ localUserId, localUserName, micOn, localStream, p
             )}
             {isWhisperActive && (
               <Chip
-                label="Whisper Sync"
+                label="Sync"
                 size="small"
                 sx={{
                   color: 'var(--color-secondary)',

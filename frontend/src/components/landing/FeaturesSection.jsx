@@ -30,14 +30,14 @@ const FeaturesSection = () => {
   return (
     <Box
       sx={{
-        py: { xs: 12, md: 24 },
+        py: { xs: 10, md: 14 },
         backgroundColor: 'var(--bg-dark)',
         position: 'relative',
         zIndex: 1,
       }}
     >
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: { xs: 8, md: 12 } }}>
+        <Box sx={{ textAlign: 'center', mb: { xs: 6, md: 8 } }}>
           <Typography
             component={motion.p}
             initial={{ opacity: 0, y: 15 }}
@@ -64,13 +64,13 @@ const FeaturesSection = () => {
             variant="h2"
             sx={{
               fontWeight: 800,
-              fontSize: { xs: '2.5rem', md: '4rem' },
+              fontSize: { xs: '1.8rem', md: '2.4rem' },
               fontFamily: 'var(--font-heading)',
               color: 'var(--text-primary)',
             }}
           >
-            Built for{' '}
-            <span style={{ color: 'var(--text-muted)' }}>impact.</span>
+            Core{' '}
+            <span style={{ color: 'var(--text-muted)' }}>capabilities.</span>
           </Typography>
         </Box>
 

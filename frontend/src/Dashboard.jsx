@@ -438,13 +438,16 @@ export default function Dashboard() {
       >
         {/* Logo */}
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }} onClick={() => navigate('/')}>
-          <Box sx={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: 'var(--text-primary)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: 'var(--bg-dark)' }} />
-          </Box>
+          <Box
+            component="img"
+            src="/nexus-meet-logo.svg"
+            alt="Nexus Meet AI"
+            sx={{
+              width: 32,
+              height: 32,
+              objectFit: 'contain'
+            }}
+          />
           <Typography sx={{
             fontFamily: 'var(--font-heading)', fontWeight: 800,
             fontSize: '1.25rem', letterSpacing: '-0.02em',

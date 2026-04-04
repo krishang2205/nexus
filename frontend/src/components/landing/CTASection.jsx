@@ -12,7 +12,7 @@ const CTASection = ({ onGetStarted }) => {
     <Box
       id="auth-section"
       sx={{
-        py: { xs: 14, md: 20 },
+        py: { xs: 10, md: 14 },
         position: 'relative',
         zIndex: 1,
         backgroundColor: 'var(--bg-dark)',
@@ -33,21 +33,21 @@ const CTASection = ({ onGetStarted }) => {
                 variant="h2"
                 sx={{
                   fontWeight: 800,
-                  mb: 3,
-                  fontSize: { xs: '2.5rem', md: '4.5rem' },
+                  mb: 2,
+                  fontSize: { xs: '1.9rem', md: '2.5rem' },
                   color: 'var(--text-primary)',
                   fontFamily: 'var(--font-heading)',
-                  lineHeight: 1,
+                  lineHeight: 1.15,
                 }}
               >
-                Welcome to <span style={{ color: 'var(--text-muted)' }}>Nexus</span>
+                Access the <span style={{ color: 'var(--text-muted)' }}>Nexus workspace</span>
               </Typography>
 
               <Typography
                 sx={{
                   color: 'var(--text-secondary)',
-                  fontSize: '1.2rem',
-                  mb: 6,
+                  fontSize: { xs: '0.96rem', md: '1rem' },
+                  mb: 4,
                   maxWidth: 500,
                   mx: 'auto',
                   lineHeight: 1.5,
@@ -75,43 +75,37 @@ const CTASection = ({ onGetStarted }) => {
 
             {/* Signed In — Show Dashboard CTA */}
             <SignedIn>
-              <Typography
+              {/* Main headline for authenticated users */}
+              {/* <Typography
                 variant="h2"
                 sx={{
                   fontWeight: 800,
-                  mb: 3,
-                  fontSize: { xs: '2.5rem', md: '4.5rem' },
+                  mb: 2,
+                  fontSize: { xs: '1.9rem', md: '2.5rem' },
                   color: 'var(--text-primary)',
                   fontFamily: 'var(--font-heading)',
-                  lineHeight: 1,
+                  lineHeight: 1.15,
                 }}
               >
                 Your command center{' '}
                 <span style={{ color: 'var(--text-muted)' }}>awaits.</span>
-              </Typography>
+              </Typography> */}
 
-              <Typography
+              {/* Subtitle describing available actions */}
+              {/* <Typography
                 sx={{
                   color: 'var(--text-secondary)',
-                  fontSize: '1.2rem',
-                  mb: 6,
+                  fontSize: { xs: '0.96rem', md: '1rem' },
+                  mb: 4,
                   maxWidth: 500,
                   mx: 'auto',
                 }}
               >
                 Start a meeting, review intelligence, or set up your next AI-powered session.
-              </Typography>
+              </Typography> */}
 
-              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} justifyContent="center">
-                <Box
-                  component="button"
-                  className="btn-premium"
-                  onClick={() => navigate('/dashboard')}
-                  sx={{ py: 2.5, px: 6, fontSize: '1.15rem' }}
-                >
-                  Go to Dashboard <ArrowOutward sx={{ ml: 1, fontSize: '1.2rem' }} />
-                </Box>
-              </Stack>
+              {/* Primary action button container */}
+              
             </SignedIn>
           </Box>
         </Box>

@@ -19,7 +19,6 @@ import { useNavigate } from 'react-router-dom';
 
 // Landing Components
 import Hero from './components/landing/Hero';
-import HowItWorks from './components/landing/HowItWorks';
 import FeaturesSection from './components/landing/FeaturesSection';
 import ProductPreview from './components/landing/ProductPreview';
 import CTASection from './components/landing/CTASection';
@@ -73,18 +72,15 @@ export default function Landing() {
           <Toolbar sx={{ height: 90, gap: 1, py: {xs: 1, md: 0} }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, cursor: 'pointer' }} onClick={() => window.scrollTo(0, 0)}>
               <Box
+                component="img"
+                src="/nexus-meet-logo.svg"
+                alt="Nexus Meet AI"
                 sx={{
                   width: 32,
                   height: 32,
-                  borderRadius: '50%',
-                  background: 'var(--text-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  objectFit: 'contain'
                 }}
-              >
-                <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: 'var(--bg-dark)' }} />
-              </Box>
+              />
               <Typography sx={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                 Nexus Meet AI
               </Typography>
@@ -135,19 +131,16 @@ export default function Landing() {
       <Box sx={{ position: 'relative', zIndex: 1 }}>
         {/* 1. Hero */}
         <Hero onStartTrial={handleGetStarted} />
-        
-        {/* 2. How It Works */}
-        <HowItWorks />
-        
-        {/* 3. Product Preview */}
+
+        {/* 2. Product Preview */}
         <Box id="product-preview">
           <ProductPreview />
         </Box>
-        
-        {/* 4. Features */}
+
+        {/* 3. Features */}
         <FeaturesSection />
-        
-        {/* 5. CTA + Auth (merged) */}
+
+        {/* 4. CTA + Auth (merged) */}
         <CTASection onGetStarted={handleGetStarted} />
 
         {/* Footer */}
@@ -155,14 +148,21 @@ export default function Landing() {
           <Container maxWidth="xl">
             <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" alignItems={{xs: 'flex-start', md: 'center'}} spacing={4}>
                <Stack direction="row" spacing={2} alignItems="center">
-                 <Box sx={{ width: 24, height: 24, borderRadius: '50%', background: 'var(--text-primary)', display: 'grid', placeItems: 'center' }}>
-                   <Box sx={{ width: 8, height: 8, borderRadius: '50%', backgroundColor: 'var(--bg-dark)' }} />
-                 </Box>
+                 <Box
+                   component="img"
+                   src="/nexus-meet-logo.svg"
+                   alt="Nexus Meet"
+                   sx={{
+                     width: 24,
+                     height: 24,
+                     objectFit: 'contain'
+                   }}
+                 />
                  <Typography sx={{ fontFamily: 'var(--font-heading)', fontWeight: 800, fontSize: '1rem' }}>Nexus Meet</Typography>
                </Stack>
                
                <Typography sx={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                 Built for fast teams and hackathon launch readiness.
+                 Built for enterprise teams that operate on clear decisions.
                </Typography>
             </Stack>
           </Container>
